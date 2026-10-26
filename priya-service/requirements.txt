@@ -1,0 +1,10 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+httpx==0.28.1
+python-multipart==0.0.20
+pydantic-settings==2.10.1
+soundfile==0.13.1
+PyMuPDF==1.26.4
+easyocr==1.7.2
+faster-whisper==1.1.1
+parler-tts @ git+https://github.com/huggingface/parler-tts.git
