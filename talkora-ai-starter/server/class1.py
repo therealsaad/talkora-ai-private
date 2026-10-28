@@ -15,6 +15,7 @@ from .class1_adaptive import (CONTEXT_WORDS, FOUNDATION_WORDS, SYSTEM_INSTRUCTIO
                               curriculum_context, has_supported_school_sentence,
                               is_simple_repeat, select_teaching_plan)
 from .class1_hint_gate import validate_model_hint
+from .class1_language import resolve_support_language
 
 LESSON = json.loads((Path(__file__).resolve().parents[1] / 'phase3/class1.json').read_text(encoding='utf-8'))
 WORDS = set(LESSON['approved_foundation_words'])
@@ -22,6 +23,70 @@ if WORDS != FOUNDATION_WORDS:
     raise ValueError('Class 1 adaptive vocabulary disagrees with the existing pilot')
 SENTENCES = {**LESSON['model_sentences'], 'school': 'I am at school.',
              'walk': 'I walk to school.'}
+
+
+def authored_coaching(language: str, *, target: str | None,
+                      observed: bool | None, school_story: bool,
+                      supported_sentence: bool, mode: str) -> tuple[str, str]:
+    """Original, educator-reviewable scaffolds, never model-generated claims.
+
+    Keep the word being taught in English even when the explanation is in a
+    home language. Output is intentionally bounded, fast and costs no GPU.
+    """
+    if target:
+        if observed is True:
+            if mode == 'EXTEND' and school_story:
+                pairs = {
+                    'en': (f'Nice effort saying {target}! Let us use it at school.',
+                           'Can you say: I am at school?'),
+                    'hi': (f'बहुत अच्छी कोशिश! अब {target} को स्कूल की बात में बोलेंगे।',
+                           'अंग्रेज़ी में बोलो: I am at school.'),
+                    'mr': (f'छान प्रयत्न! आता {target} शाळेबद्दलच्या वाक्यात वापरू.',
+                           'इंग्रजीत म्हण: I am at school.'),
+                }
+                return pairs[language]
+            pairs = {
+                'en': (f'I heard {target}. Nice effort!',
+                       f'Can you say {target} once more?'),
+                'hi': (f'मैंने {target} सुना। अच्छी कोशिश!',
+                       f'क्या तुम {target} एक बार और बोलोगे?'),
+                'mr': (f'मला {target} ऐकू आलं. छान प्रयत्न!',
+                       f'{target} पुन्हा एकदा म्हणशील का?'),
+            }
+            return pairs[language]
+        if observed is False:
+            pairs = {
+                'en': (f'No worries. Listen carefully: {target}. Let us try together.',
+                       f'Say {target} with me.'),
+                'hi': (f'कोई बात नहीं। ध्यान से सुनो: {target}। साथ में बोलते हैं।',
+                       f'मेरे साथ {target} बोलो।'),
+                'mr': (f'काही हरकत नाही. नीट ऐक: {target}. आपण एकत्र म्हणू.',
+                       f'माझ्यासोबत {target} म्हण.'),
+            }
+            return pairs[language]
+    if supported_sentence:
+        pairs = {
+            'en': ('I heard you talking about school. Nice effort!',
+                   'Can you tell me one more thing about school?'),
+            'hi': ('तुमने स्कूल के बारे में बताया। बहुत अच्छी कोशिश!',
+                   'स्कूल के बारे में एक और बात अंग्रेज़ी में बताओ।'),
+            'mr': ('तू शाळेबद्दल सांगितलंस. छान प्रयत्न!',
+                   'शाळेबद्दल अजून एक गोष्ट इंग्रजीत सांग.'),
+        }
+        return pairs[language]
+    if school_story:
+        pairs = {
+            'en': ('Let us talk about school together.', 'Can you say school?'),
+            'hi': ('चलो स्कूल की बात करते हैं।', 'अंग्रेज़ी में school बोलो।'),
+            'mr': ('चला, शाळेबद्दल बोलूया.', 'इंग्रजीत school म्हण.'),
+        }
+        return pairs[language]
+    pairs = {
+        'en': ('Let us try a little English word together.', 'Can you say at?'),
+        'hi': ('चलो, एक छोटा अंग्रेज़ी शब्द सीखते हैं।', 'मेरे साथ at बोलो।'),
+        'mr': ('चला, एक छोटा इंग्रजी शब्द शिकूया.', 'माझ्यासोबत at म्हण.'),
+    }
+    return pairs[language]
 
 
 def active_target(question: str, activity: str = '') -> str | None:
@@ -120,8 +185,7 @@ async def query_qwen(target: str | None, transcript: str, observed: bool | None,
 async def respond_class1(req: Any) -> dict[str, Any]:
     if req.grade != 1 or req.levelId != 'g01-l01':
         raise HTTPException(422, 'Only Class 1 Level 1 is authored for this pilot')
-    lang = {'english':'en','hindi':'hi','marathi':'mr','en':'en','hi':'hi','mr':'mr'}.get(
-        req.preferredExplanationLanguage.lower())
+    lang = resolve_support_language(req.preferredExplanationLanguage, req.studentMessage)
     if lang is None:
         raise HTTPException(422, 'Unsupported explanation language')
     target = active_target(req.currentQuestion, req.activityTitle)
@@ -133,27 +197,22 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         await query_qwen(target, req.studentMessage, observed, lang,
                          req.currentQuestion, plan=plan, activity=req.activityTitle)
     )
-    if target is None and has_supported_school_sentence(
+    supported_sentence = target is None and has_supported_school_sentence(
         req.currentQuestion, req.activityTitle, req.studentMessage
-    ):
-        baseline = 'I heard you talk about school. Nice effort!'
-        follow_up = 'Can you tell me one more thing about your school day?'
+    )
+    school_story = bool(set(curriculum_context(req.currentQuestion, req.activityTitle)
+                            ['approved_vocabulary']) & CONTEXT_WORDS)
+    baseline, follow_up = authored_coaching(
+        lang, target=target, observed=observed, school_story=school_story,
+        supported_sentence=supported_sentence, mode=plan.mode,
+    )
+    if supported_sentence:
         quality, action, retry = 'ADEQUATE', 'ASK_FOLLOW_UP', False
     elif target is None or observed is None:
-        school_story = bool(set(curriculum_context(req.currentQuestion, req.activityTitle)
-                                ['approved_vocabulary']) & CONTEXT_WORDS)
-        baseline = ('Thank you for sharing. Let us talk about school together.' if school_story
-                    else 'Let us try a short English word together.')
-        follow_up = ('Can you tell me one thing about school?' if school_story
-                     else 'Can you say at?')
         quality, action, retry = 'UNCLEAR', 'CLARIFY', False
     elif observed:
-        baseline = f'I heard the word {target}. Nice effort!'
-        follow_up = f'Can you use {target} in a little sentence?'
         quality, action, retry = 'ADEQUATE', 'ASK_FOLLOW_UP', False
     else:
-        baseline = f'Thank you for trying. Let us practise {target} together.'
-        follow_up = f'Can you try saying {target} once more?'
         quality, action, retry = 'PARTIAL', 'GIVE_HINT', True
     # Constrain the model to optional coaching only. It cannot award grades,
     # override the teacher question, or complete the lesson.
