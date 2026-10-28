@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from .class1_adaptive import (CONTEXT_WORDS, FOUNDATION_WORDS, SYSTEM_INSTRUCTIONS,
                               curriculum_context, has_supported_school_sentence,
                               is_simple_repeat, select_teaching_plan)
+from .class1_hint_gate import validate_model_hint
 
 LESSON = json.loads((Path(__file__).resolve().parents[1] / 'phase3/class1.json').read_text(encoding='utf-8'))
 WORDS = set(LESSON['approved_foundation_words'])
@@ -75,6 +76,13 @@ async def query_qwen(target: str | None, transcript: str, observed: bool | None,
                      language: str, question: str, *, plan: Any = None,
                      activity: str = '') -> str:
     """Model supplies an optional child-friendly coaching hint, never the grade."""
+    # The V2 adapter failed held-out QA. Existing scripted lesson feedback stays
+    # usable while model hints require a separate educator-approved feature gate.
+    # Do not enable for bilingual model output, unknown targets, or sentence IDs.
+    if os.getenv('TALKORA_CLASS1_HINTS_APPROVED', '').lower() != 'true':
+        return ''
+    if target not in (FOUNDATION_WORDS | CONTEXT_WORDS) or language != 'en':
+        return ''
     url = os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
     if url not in ('http://127.0.0.1:11434', 'http://localhost:11434'):
         raise HTTPException(503, 'Class 1 pilot permits local Ollama only')
@@ -88,18 +96,21 @@ async def query_qwen(target: str | None, transcript: str, observed: bool | None,
                'scaffold_mode':plan.mode if plan else 'GUIDE',
                'scaffold_instruction':plan.instruction if plan else 'Offer a small hint.'}
     try:
-        async with httpx.AsyncClient(timeout=12) as client:
+        # Keep voice-first lessons responsive if local Ollama is busy or cold.
+        async with httpx.AsyncClient(timeout=3.0) as client:
             result = await client.post(url + '/api/chat', json={
                 'model':model, 'stream':False, 'format':'json',
-                'options':{'temperature':0.15,'num_predict':80},
+                'options':{'temperature':0.0,'num_predict':64},
                 'messages':[{'role':'system','content':SYSTEM_INSTRUCTIONS},
                             {'role':'user','content':json.dumps(payload,ensure_ascii=False)}],
             })
             result.raise_for_status()
-            parsed = json.loads(result.json()['message']['content'])
-        if not isinstance(parsed, dict):
-            return ''
-        return safe_line(parsed.get('hint'))
+            raw = result.json()['message']['content']
+        candidate = validate_model_hint(
+            raw, target=target, language=language,
+            mode=plan.mode if plan else 'GUIDE',
+        )
+        return safe_line(candidate)
     except (httpx.HTTPError, KeyError, ValueError, TypeError):
         # The fixed lesson response remains usable if Ollama is cold or down;
         # model output is supplementary coaching, never the source of grading.
