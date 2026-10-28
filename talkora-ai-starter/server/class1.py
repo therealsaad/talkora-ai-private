@@ -68,10 +68,10 @@ def authored_coaching(language: str, *, target: str | None,
         pairs = {
             'en': ('I heard you talking about school. Nice effort!',
                    'Can you tell me one more thing about school?'),
-            'hi': ('तुमने स्कूल के बारे में बताया। बहुत अच्छी कोशिश!',
-                   'स्कूल के बारे में एक और बात अंग्रेज़ी में बताओ।'),
-            'mr': ('तू शाळेबद्दल सांगितलंस. छान प्रयत्न!',
-                   'शाळेबद्दल अजून एक गोष्ट इंग्रजीत सांग.'),
+            'hi': ('तुमने school के बारे में बताया। बहुत अच्छी कोशिश!',
+                   'school के बारे में एक और बात अंग्रेज़ी में बताओ।'),
+            'mr': ('तू school बद्दल सांगितलंस. छान प्रयत्न!',
+                   'school बद्दल अजून एक गोष्ट इंग्रजीत सांग.'),
         }
         return pairs[language]
     if school_story:
