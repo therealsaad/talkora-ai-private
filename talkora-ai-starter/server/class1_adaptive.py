@@ -69,6 +69,16 @@ def has_supported_school_sentence(question: str, activity_title: str, transcript
     )
 
 
+def has_supported_first_day_action_sentence(question: str, activity_title: str,
+                                             transcript: str) -> bool:
+    """Recognise short ORIGINAL school-action models, only in Unit 1.1 context."""
+    prompt = f"{question} {activity_title}".lower()
+    if not re.search(r"\b(?:school|walk|first\s+day)\b", prompt):
+        return False
+    spoken = " ".join(re.findall(r"[a-z]+", transcript.lower()))
+    return bool(re.search(r"\bi can (?:run|skip|jump|play|smile)\b|\bi hear a bell\b", spoken))
+
+
 def select_teaching_plan(req: Any, observed: bool | None, target: str | None) -> TeachingPlan:
     """Use provided learning signals without claiming to estimate a child's IQ."""
     try:
@@ -85,6 +95,10 @@ def select_teaching_plan(req: Any, observed: bool | None, target: str | None) ->
         str(getattr(req, "currentQuestion", "")),
         str(getattr(req, "activityTitle", "")),
         str(getattr(req, "studentMessage", "")),
+    ) or has_supported_first_day_action_sentence(
+        str(getattr(req, "currentQuestion", "")),
+        str(getattr(req, "activityTitle", "")),
+        str(getattr(req, "studentMessage", "")),
     )
 
     if observed is False or retry or hint_level >= 2 or recent_mistakes >= 2:
@@ -92,6 +106,10 @@ def select_teaching_plan(req: Any, observed: bool | None, target: str | None) ->
     elif hint_level or recent_mistakes:
         mode = "GUIDE"
     elif approved_sentence and (observed or has_supported_school_sentence(
+        str(getattr(req, "currentQuestion", "")),
+        str(getattr(req, "activityTitle", "")),
+        str(getattr(req, "studentMessage", "")),
+    ) or has_supported_first_day_action_sentence(
         str(getattr(req, "currentQuestion", "")),
         str(getattr(req, "activityTitle", "")),
         str(getattr(req, "studentMessage", "")),

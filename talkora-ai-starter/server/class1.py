@@ -27,6 +27,16 @@ SENTENCES = {**LESSON['model_sentences'], 'school': 'I am at school.',
 # The only school-story sentences admitted by this *draft* Class 1 Level 1
 # companion. Qwen cannot expand the lesson to unrelated textbook content.
 SCHOOL_MODELS = ('I am at school.', 'I walk to school.')
+# Only original, educator-reviewable action sentences for the *themes* of
+# English Balbharati Grade One (2025), Unit 1.1, page 1. None reproduce its rhyme.
+FIRST_DAY_ACTIONS = {
+    'run': 'I can run.',
+    'skip': 'I can skip.',
+    'jump': 'I can jump.',
+    'play': 'I can play.',
+    'bell': 'I hear a bell.',
+    'grin': 'I can smile.',
+}
 
 
 def school_coaching(language: str, transcript: str, history: list[str], mode: str) -> tuple[str, str, str, str, bool]:
@@ -41,6 +51,35 @@ def school_coaching(language: str, transcript: str, history: list[str], mode: st
     has_walk_sentence = 'i walk to school' in spoken
     word_only = not (has_school_sentence or has_walk_sentence) and bool(
         re.search(r'\b(?:school|walk)\b', spoken))
+    # For the learner's own first-day school story, choose one familiar action
+    # from their transcript. The lesson/prompt boundary is checked by caller.
+    # Never treat ASR word presence as a pronunciation or mastery score.
+    action = next((word for word in FIRST_DAY_ACTIONS if re.search(
+        rf'\b{word}\b', spoken)), None)
+    if action and not (has_school_sentence or has_walk_sentence):
+        example = FIRST_DAY_ACTIONS[action]
+        attempted_sentence = (bool(re.search(rf'\bi\s+can\s+{action}\b', spoken))
+                              if action != 'bell' else 'i hear a bell' in spoken)
+        if attempted_sentence and mode not in ('MODEL', 'GUIDE'):
+            # One supported follow-up, never an unrelated new chapter.
+            follow_model = 'I can play.' if action != 'play' else 'I can jump.'
+            feedback = {
+                'en': f'I heard your school action! Let us try: {follow_model}',
+                'hi': f'तुमने स्कूल की क्रिया बताई! अब बोलो: {follow_model}',
+                'mr': f'तू शाळेतील कृती सांगितलीस! आता म्हण: {follow_model}',
+            }
+            return feedback[language], f'Can you say: {follow_model}', 'ADEQUATE', follow_model, False
+        feedback = {
+            'en': f'Good try! Here is a little sentence: {example}',
+            'hi': f'अच्छी कोशिश! अंग्रेज़ी में सुनो: {example}',
+            'mr': f'छान प्रयत्न! इंग्रजीत ऐक: {example}',
+        }
+        follow = {
+            'en': f'Now say with me: {example}',
+            'hi': f'अब मेरे साथ बोलो: {example}',
+            'mr': f'आता माझ्यासोबत म्हण: {example}',
+        }
+        return feedback[language], follow[language], 'PARTIAL', example, True
     # Alternate the follow-up after an observed sentence to avoid the same
     # generic school question on every turn. Never reuse personal facts.
     next_model = SCHOOL_MODELS[1] if has_school_sentence else SCHOOL_MODELS[0]

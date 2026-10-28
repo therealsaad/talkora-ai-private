@@ -69,3 +69,43 @@ def test_not_an_iq_or_pronunciation_assessment(monkeypatch):
     assert result['activityComplete'] is False
     assert not result['correction']['needed']
     assert all(word not in result['message'].lower() for word in ('iq', 'pronunciation', 'wrong', 'perfect'))
+
+
+def test_first_day_action_word_gets_original_short_sentence(monkeypatch):
+    monkeypatch.delenv('TALKORA_CLASS1_HINTS_APPROVED', raising=False)
+    result = lesson_turn('jump')
+    assert result['responseQuality'] == 'PARTIAL'
+    assert result['shouldRetry'] is True
+    assert result['modelSentence'] == 'I can jump.'
+    assert 'I can jump.' in result['followUpQuestion']
+
+
+def test_first_day_full_action_sentence_unlocks_one_related_prompt(monkeypatch):
+    monkeypatch.delenv('TALKORA_CLASS1_HINTS_APPROVED', raising=False)
+    result = lesson_turn('I can jump.')
+    assert result['responseQuality'] == 'ADEQUATE'
+    assert result['followUpQuestion'] == 'Can you say: I can play.'
+    assert result['activityComplete'] is False
+
+
+def test_first_day_child_with_previous_mistakes_rehearses(monkeypatch):
+    monkeypatch.delenv('TALKORA_CLASS1_HINTS_APPROVED', raising=False)
+    result = lesson_turn('I can jump.', recentMistakes=['jump', 'run'])
+    assert result['responseQuality'] == 'PARTIAL'
+    assert result['shouldRetry'] is True
+    assert result['modelSentence'] == 'I can jump.'
+
+
+def test_first_day_marathi_support_still_teaches_english(monkeypatch):
+    monkeypatch.delenv('TALKORA_CLASS1_HINTS_APPROVED', raising=False)
+    result = lesson_turn('run', preferredExplanationLanguage='Marathi')
+    assert 'छान प्रयत्न' in result['message']
+    assert 'I can run.' in result['message']
+    assert 'I can run.' in result['followUpQuestion']
+
+
+def test_action_utterance_does_not_jump_out_of_tiny_word_activity(monkeypatch):
+    monkeypatch.delenv('TALKORA_CLASS1_HINTS_APPROVED', raising=False)
+    result = lesson_turn('jump', currentQuestion='Say the word am.', activityTitle='Little words')
+    assert result['modelSentence'] != 'I can jump.'
+    assert result['activityComplete'] is False
