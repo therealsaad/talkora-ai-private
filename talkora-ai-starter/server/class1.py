@@ -24,6 +24,81 @@ if WORDS != FOUNDATION_WORDS:
 SENTENCES = {**LESSON['model_sentences'], 'school': 'I am at school.',
              'walk': 'I walk to school.'}
 
+# The only school-story sentences admitted by this *draft* Class 1 Level 1
+# companion. Qwen cannot expand the lesson to unrelated textbook content.
+SCHOOL_MODELS = ('I am at school.', 'I walk to school.')
+
+
+def school_coaching(language: str, transcript: str, history: list[str], mode: str) -> tuple[str, str, str, str, bool]:
+    """React to the child's actual *text evidence*, not an invented IQ score.
+
+    A child saying a single school word receives a modeled sentence; a child
+    attempting a full approved sentence gets a new tiny follow-up. Hindi or
+    Marathi may explain, but every model sentence remains in English.
+    """
+    spoken = ' '.join(re.findall(r'[a-z]+', (transcript or '').lower()))
+    has_school_sentence = 'i am at school' in spoken
+    has_walk_sentence = 'i walk to school' in spoken
+    word_only = not (has_school_sentence or has_walk_sentence) and bool(
+        re.search(r'\b(?:school|walk)\b', spoken))
+    # Alternate the follow-up after an observed sentence to avoid the same
+    # generic school question on every turn. Never reuse personal facts.
+    next_model = SCHOOL_MODELS[1] if has_school_sentence else SCHOOL_MODELS[0]
+    if mode in ('MODEL', 'GUIDE'):
+        # A learner still receiving support should rehearse the sentence they
+        # just attempted, not be rushed into new language.
+        next_model = SCHOOL_MODELS[0] if has_school_sentence else SCHOOL_MODELS[1]
+    elif has_school_sentence or has_walk_sentence:
+        # Prefer an unseen model when the child is ready to extend. The
+        # context includes only recent turns, never a long-term transcript.
+        practiced = ' '.join(
+            item.lower() for item in history[-8:]
+            if isinstance(item, str) and item.lower().startswith('student:')
+        )
+        if next_model.lower().rstrip('.') in practiced:
+            next_model = SCHOOL_MODELS[0] if has_school_sentence else SCHOOL_MODELS[1]
+    if has_school_sentence or has_walk_sentence:
+        follow = {
+            'en': f'Nice school sentence! Can you say: {next_model}',
+            'hi': f'अच्छी कोशिश! अब अंग्रेज़ी में बोलो: {next_model}',
+            'mr': f'छान प्रयत्न! आता इंग्रजीत म्हण: {next_model}',
+        }
+        msg = {
+            'en': 'I heard a sentence about school. Well done trying!',
+            'hi': 'तुमने school के बारे में वाक्य बोला। अच्छी कोशिश!',
+            'mr': 'तू school बद्दल वाक्य म्हटलंस. छान प्रयत्न!',
+        }
+        return msg[language], follow[language], 'ADEQUATE', next_model, False
+
+    if word_only:
+        example = SCHOOL_MODELS[1] if 'walk' in spoken else SCHOOL_MODELS[0]
+        feedback = {
+            'en': f'I heard a school word. Let us make a sentence: {example}',
+            'hi': f'तुमने इंग्लिश शब्द बोला। अब वाक्य सुनो: {example}',
+            'mr': f'तू इंग्रजी शब्द म्हटलास. आता वाक्य ऐक: {example}',
+        }
+        follow = {
+            'en': f'Say with me: {example}',
+            'hi': f'मेरे साथ अंग्रेज़ी में बोलो: {example}',
+            'mr': f'माझ्यासोबत इंग्रजीत म्हण: {example}',
+        }
+        return feedback[language], follow[language], 'PARTIAL', example, True
+
+    # Recognize help requests as a need for modeling, not a failed attempt.
+    # If no clear English evidence was heard, do not praise a specific word.
+    example = SCHOOL_MODELS[0]
+    msg = {
+        'en': f'No worries. Listen to Miss Julie: {example}',
+        'hi': f'कोई बात नहीं। मेरी बात सुनो: {example}',
+        'mr': f'काही हरकत नाही. माझं ऐक: {example}',
+    }
+    follow = {
+        'en': f'Can you try: {example}',
+        'hi': f'अब अंग्रेज़ी में कोशिश करो: {example}',
+        'mr': f'आता इंग्रजीत प्रयत्न कर: {example}',
+    }
+    return msg[language], follow[language], 'UNCLEAR', example, True
+
 
 def authored_coaching(language: str, *, target: str | None,
                       observed: bool | None, school_story: bool,
@@ -202,18 +277,25 @@ async def respond_class1(req: Any) -> dict[str, Any]:
     )
     school_story = bool(set(curriculum_context(req.currentQuestion, req.activityTitle)
                             ['approved_vocabulary']) & CONTEXT_WORDS)
-    baseline, follow_up = authored_coaching(
-        lang, target=target, observed=observed, school_story=school_story,
-        supported_sentence=supported_sentence, mode=plan.mode,
-    )
-    if supported_sentence:
-        quality, action, retry = 'ADEQUATE', 'ASK_FOLLOW_UP', False
-    elif target is None or observed is None:
-        quality, action, retry = 'UNCLEAR', 'CLARIFY', False
-    elif observed:
-        quality, action, retry = 'ADEQUATE', 'ASK_FOLLOW_UP', False
+    model_sentence = SENTENCES.get(target) if target else None
+    if school_story and target is None:
+        baseline, follow_up, quality, model_sentence, retry = school_coaching(
+            lang, req.studentMessage, req.conversationHistory, plan.mode,
+        )
+        action = 'ASK_FOLLOW_UP' if quality == 'ADEQUATE' else 'MODEL_SENTENCE'
     else:
-        quality, action, retry = 'PARTIAL', 'GIVE_HINT', True
+        baseline, follow_up = authored_coaching(
+            lang, target=target, observed=observed, school_story=school_story,
+            supported_sentence=supported_sentence, mode=plan.mode,
+        )
+        if supported_sentence:
+            quality, action, retry = 'ADEQUATE', 'ASK_FOLLOW_UP', False
+        elif target is None or observed is None:
+            quality, action, retry = 'UNCLEAR', 'CLARIFY', False
+        elif observed:
+            quality, action, retry = 'ADEQUATE', 'ASK_FOLLOW_UP', False
+        else:
+            quality, action, retry = 'PARTIAL', 'GIVE_HINT', True
     # Constrain the model to optional coaching only. It cannot award grades,
     # override the teacher question, or complete the lesson.
     spoken = baseline + ((' ' + hint) if hint else '')
@@ -222,7 +304,7 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         'responseQuality':quality, 'followUpQuestion':follow_up[:250],
         'correction':{'needed':False,'original':'','corrected':'','explanation':''},
         'memoryUpdates':[], 'recommendedAction':action,'teachingAction':action,
-        'modelSentence':SENTENCES.get(target) if target else None,
+        'modelSentence':model_sentence,
         'activityComplete':False,'shouldRetry':retry,
         'hintLevel':min(3,max(0,int(req.hintLevel)) + (1 if retry else 0)),
         'detectedSkills':[], 'remainingSkills':[],
