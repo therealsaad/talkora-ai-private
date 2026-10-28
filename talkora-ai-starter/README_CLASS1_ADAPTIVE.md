@@ -11,8 +11,10 @@ on, up`). It does **not** duplicate the publisher's poem or artwork.
 - `hintLevel`, `waitingForRetry`, and `recentMistakes` (already provided by the
   bridge) choose one of `MODEL`, `GUIDE`, `PRACTISE`, and `EXTEND`.
 - This is **learning support**, not IQ assessment or a verified mastery score.
-- Qwen supplies only a short supplementary coaching hint. Node remains the
-  sole authority for actual progress, completion and student memory.
+- The QLoRA V2 adapter did **not** pass automated QA (13/24); it is NOT deployed.
+- Local Qwen hints are **disabled by default**. Only a separate educator-approved
+  `TALKORA_CLASS1_HINTS_APPROVED=true` enables short, validated English hints.
+  Hindi/Marathi model hints remain blocked. Node alone owns progress and memory.
 - When a word-repeat activity is already handled by the fixed response guard,
   **no Ollama call occurs**. This removes a needless model round-trip.
 - For open school conversations Qwen sees only the active teacher prompt,
@@ -34,9 +36,9 @@ python -m pytest -q tests/test_class1_compat.py tests/test_class1_response_guard
 python -m training.class1_adaptive_data
 ```
 
-Generates **240 synthetic examples** with target-word-held-out validation and
-test splits (192/24/24), across English/Hindi/Marathi support and four teaching
-modes. This **does not train the running model**. Manually review the generated
+Generates **240 synthetic examples** (192/24/24) with the same approved words
+across each split but distinct teacher prompts. This tests seen-word coaching,
+not unseen-word generalization. Includes English/Hindi/Marathi and four modes. This **does not train the running model**. Manually review the generated
 text, educational correctness, spelling, bilingual content, curriculum and
 copyright alignment before any GPU training.
 
@@ -62,9 +64,28 @@ fine-tuned.
 2. School-talk prompt: ensure the AI discusses school, not other chapters.
 3. Check Hindi/Marathi support for difficult attempts.
 4. Check unavailable Ollama and slow response handling; repeat activities
-   must still work. A cold guided reply may still take up to 12 seconds.
+   must still work. Approved optional Qwen hints have a 3-second time budget.
 5. Check the authenticated student browser session, STT, S3 Priya audio,
    homework, and MongoDB progress end to end before publishing the draft.
 
 Do not upload raw child speech or personally identifying information into the
 training set. The teaching engine must not infer IQ from response times.
+
+## Secure production integration
+
+Use `talkora-ai-starter` as the canonical Class 1 Python service on port 8002.
+The older `qwen-service` folder is not the adaptive pilot. This service is still
+an educator-review-required pilot and is not a QLoRA deployment.
+
+- Both Node and Python must use the same server-only `TALKORA_SERVICE_KEY`
+  (at least 32 characters). Do not expose it through `NEXT_PUBLIC_*` variables.
+- On Python set `TALKORA_ENV=production` and
+  `TALKORA_CLASS1_HINTS_APPROVED=false`; the service fails closed without a key.
+- The Python `/v1/brain/respond` route requires the
+  `X-Talkora-Service-Key` header; the Node backend now sends it.
+- `/chat` is an experimental endpoint; it is disabled in production by default.
+- Version-controlled `phase3/kg1.json` and `phase3/class1.json` are the
+  only startup lesson fixtures; ignored `datasets/` is NOT a runtime dependency.
+- Run `python -m pytest -q tests` before rollout. Automated checks are not
+  a substitute for educator review or actual STT/TTS and MongoDB integration.
+
