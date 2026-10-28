@@ -1,0 +1,19 @@
+{
+  "levelId": "g01-l01",
+  "title": "Little Words & My First Day",
+  "syllabus": {
+    "book": "English Balbharati, Standard One (2025)",
+    "unit": "Unit One, 1.1 My First Day",
+    "pages": [1],
+    "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050001.pdf"
+  },
+  "contentPolicy": "Original Talkora companion practice aligned to the lesson; no textbook poem or artwork is reproduced.",
+  "foundationWords": ["am", "an", "at", "in", "is", "it", "on", "up"],
+  "contextWords": ["school", "walk"],
+  "modelSentences": ["Look at me.", "I am Sam.", "I am at school.", "I walk to school."],
+  "learningGoals": [
+    "Listen to and repeat familiar two-letter words.",
+    "Recognize school and walk in a first-day school context.",
+    "Practise one simple sentence about school with gentle support."
+  ]
+}

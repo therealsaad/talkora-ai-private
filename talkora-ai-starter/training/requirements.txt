@@ -1,0 +1,7 @@
+# Install CUDA-enabled PyTorch from the official selector before these packages.
+# Use a separate virtual environment; never install into running voice/Qwen venvs.
+transformers>=4.51,<5
+accelerate>=1.6,<3
+peft>=0.15,<1
+bitsandbytes>=0.47,<1
+safetensors>=0.5,<1

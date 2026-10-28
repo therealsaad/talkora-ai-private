@@ -1,0 +1,44 @@
+{
+  "level_id": "g01-l01",
+  "grade": 1,
+  "title": "Letters and Sounds",
+  "alignment_status": "FOUNDATIONS_DRAFT_NOT_BALBHARATI_CHAPTER_VERIFIED",
+  "source_repo": "client/features/lessons/grades/class-01/level-01/activities.ts",
+  "approved_foundation_words": [
+    "am",
+    "an",
+    "at",
+    "in",
+    "is",
+    "it",
+    "on",
+    "up"
+  ],
+  "authored_activity_targets": {
+    "g01-l01-listen-at": "at",
+    "g01-l01-build-at": "at",
+    "g01-l01-listen-in": "in",
+    "g01-l01-build-in": "in",
+    "g01-l01-meaning": "look at me",
+    "g01-l01-sentence": "i am sam"
+  },
+  "model_sentences": {
+    "at": "Look at me.",
+    "in": "Come in.",
+    "am": "I am Sam.",
+    "an": "An ant.",
+    "is": "It is red.",
+    "it": "It is big.",
+    "on": "It is on.",
+    "up": "Stand up.",
+    "look at me": "Look at me.",
+    "i am sam": "I am Sam."
+  },
+  "learning_objectives": [
+    "Listen to and recognise two-letter English words",
+    "Blend letters into two-letter words",
+    "Speak a short model sentence"
+  ],
+  "teacher_review_required": true,
+  "note": "This pilot is not a verified mapping to the Balbharati textbook. Mastery is owned by the Node backend."
+}

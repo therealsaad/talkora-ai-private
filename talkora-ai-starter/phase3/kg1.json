@@ -1,0 +1,75 @@
+{
+  "level_id": "g00-l01",
+  "grade": 0,
+  "title": "ABCD Picture Garden",
+  "source_repo": "backend/src/curriculum/kg/lessons.ts",
+  "alignment_status": "EXISTING_KG_PILOT_NOT_BALBHARATI_VERIFIED",
+  "home_language_options": [
+    "hi",
+    "mr"
+  ],
+  "unit": "Look, Touch & Say",
+  "objectives": [
+    "Identify apple and cat from pictures",
+    "Say apple or cat aloud",
+    "Optionally use I see an apple"
+  ],
+  "vocabulary": [
+    {
+      "en": "apple",
+      "hi": "सेब",
+      "mr": "सफरचंद"
+    },
+    {
+      "en": "cat",
+      "hi": "बिल्ली",
+      "mr": "मांजर"
+    },
+    {
+      "en": "dog",
+      "hi": "कुत्ता",
+      "mr": "कुत्रा"
+    },
+    {
+      "en": "ball",
+      "hi": "गेंद",
+      "mr": "चेंडू"
+    }
+  ],
+  "activities": [
+    {
+      "id": "kg1-1",
+      "type": "listen_repeat",
+      "teacher": "Look! Apple. Say apple.",
+      "expected": [
+        "apple"
+      ],
+      "hint_hi": "यह सेब है। अंग्रेज़ी में apple कहते हैं।",
+      "hint_mr": "हे सफरचंद आहे. इंग्रजीत apple म्हणतात."
+    },
+    {
+      "id": "kg1-2",
+      "type": "picture_identification",
+      "teacher": "What do you see?",
+      "expected": [
+        "cat",
+        "a cat",
+        "I see a cat"
+      ],
+      "hint_hi": "बिल्ली को English में cat कहते हैं।",
+      "hint_mr": "मांजराला इंग्रजीत cat म्हणतात."
+    },
+    {
+      "id": "kg1-3",
+      "type": "speaking",
+      "teacher": "Can you say: I see an apple?",
+      "expected": [
+        "I see an apple"
+      ],
+      "hint_hi": "मेरे साथ बोलो: I see an apple.",
+      "hint_mr": "माझ्यासोबत म्हणा: I see an apple."
+    }
+  ],
+  "spoken_homework": "Show one picture at home and say: I see a cat.",
+  "teacher_review_required": true
+}
