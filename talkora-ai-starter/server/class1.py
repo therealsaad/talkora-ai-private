@@ -314,7 +314,7 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         # Only explicit syllabus questions may use the educator-gated Qwen QA
         # path. The authored model and Node mastery decision never change.
         student_question = bool(re.search(
-            r'\\b(?:what|why|how|meaning|means|explain)\\b|क्या|काय|म्हणजे|समझा|समजत',
+            r'\b(?:what|why|how|meaning|means|explain)\b|क्या|काय|म्हणजे|समझा|समजत',
             req.studentMessage[:250], flags=re.I))
         if student_question:
             qa = await first_day_qwen_qa(
