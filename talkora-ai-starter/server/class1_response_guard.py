@@ -9,6 +9,7 @@ from typing import Any
 
 # Whitelist permits repeat-mode prompts, but not arbitrary pupil content.
 from .class1_adaptive import APPROVED_WORDS
+from .class1_language import resolve_support_language
 
 WORDS = APPROVED_WORDS
 
@@ -46,16 +47,39 @@ def guard_class1_response(result: dict[str, Any], req: Any) -> dict[str, Any]:
     if _repeat_mode(req) and target:
         # A learner asked to repeat one short word should not suddenly be
         # evaluated on sentence-building or preposition grammar.
-        response['followUpQuestion'] = f"Can you say '{target}' once more?"
+        language = resolve_support_language(
+            str(getattr(req, 'preferredExplanationLanguage', 'English')),
+            str(getattr(req, 'studentMessage', '')),
+        ) or 'en'
+        follow_ups = {
+            'en': f"Can you say '{target}' once more?",
+            'hi': f"क्या तुम {target} एक बार और बोलोगे?",
+            'mr': f"{target} पुन्हा एकदा म्हणशील का?",
+        }
+        response['followUpQuestion'] = follow_ups[language]
         # Qwen may supply a grammatical digression after the fixed baseline.
         # Keep the reply deterministic and gentle for this micro-activity.
         quality = response.get('responseQuality')
-        if quality == 'PARTIAL':
-            response['message'] = f"Good effort! Listen once more, then say '{target}'."
-        elif quality == 'UNCLEAR':
-            response['message'] = f"Let's listen together. Say '{target}' when you're ready."
-        else:
-            response['message'] = f"I heard '{target}'. Nice effort! Let's say it together once more."
+        phrases = {
+            'en': {
+                'PARTIAL': f"Good effort! Listen once more, then say '{target}'.",
+                'UNCLEAR': f"Let's listen together. Say '{target}' when you're ready.",
+                'ADEQUATE': f"I heard '{target}'. Nice effort! Let's say it together once more.",
+            },
+            'hi': {
+                'PARTIAL': f"अच्छी कोशिश! सुनो: {target}। अब साथ में बोलो।",
+                'UNCLEAR': f"ध्यान से सुनो: {target}। तैयार हो तो बोलो।",
+                'ADEQUATE': f"मैंने {target} सुना। बहुत अच्छी कोशिश! फिर बोलो।",
+            },
+            'mr': {
+                'PARTIAL': f"छान प्रयत्न! ऐक: {target}. आता एकत्र म्हणू.",
+                'UNCLEAR': f"नीट ऐक: {target}. तयार झाल्यावर म्हण.",
+                'ADEQUATE': f"मला {target} ऐकू आलं. छान प्रयत्न! पुन्हा म्हण.",
+            },
+        }
+        response['message'] = phrases[language].get(
+            quality, phrases[language]['ADEQUATE']
+        )
         response['activityComplete'] = False
         response['memoryUpdates'] = []
         response['detectedSkills'] = []
