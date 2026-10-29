@@ -148,14 +148,14 @@ async def first_day_qwen_coach(language: str, title: str, question: str,
         raise HTTPException(502, 'CLASS1_QWEN_COACHING_REJECTED')
     message = ' '.join(message.split())
     unsafe = re.search(
-        r'https?://|www\\.|[<>\\[\\]{}]|\\b(password|address|phone|email|'
-        r'iq|score|perfect pronunciation|your name|your school name)\\b',
+        r'https?://|www\.|[<>{}\[\]]|\b(password|address|phone|email|'
+        r'iq|score|perfect pronunciation|your name|your school name)\b',
         message, re.I,
     )
     if (not 15 <= len(message) <= 240 or len(message.split()) > 38 or unsafe or
-            not re.search(r'\\b' + re.escape(target) + r'\\b', message, re.I) or
+            not re.search(r'\b' + re.escape(target) + r'\b', message, re.I) or
             (teacher_decision['retry'] and
-             re.search(r'\\b(perfect|exactly right|correct answer|you got it)\\b', message, re.I))):
+             re.search(r'\b(perfect|exactly right|correct answer|you got it)\b', message, re.I))):
         raise HTTPException(502, 'CLASS1_QWEN_COACHING_REJECTED')
     return message
 
