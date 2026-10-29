@@ -248,6 +248,18 @@ async def http_error(_request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request, exc: RequestValidationError):
+    # Pydantic's .errors() may contain exception instances in ctx (for example,
+    # ValueError raised by normalize_priya_voice). Exception instances cannot
+    # be JSON-serialized directly. Do not echo raw request inputs, either:
+    # student narration and future auth fields can contain sensitive text.
+    details = [
+        {
+            'type': str(item.get('type', 'value_error')),
+            'loc': [str(part) for part in item.get('loc', ())],
+            'msg': str(item.get('msg', 'Invalid field')),
+        }
+        for item in exc.errors()
+    ]
     return JSONResponse(
         status_code=422,
         content={
@@ -255,7 +267,7 @@ async def validation_error(_request, exc: RequestValidationError):
             'error': {
                 'code': 'VALIDATION_ERROR',
                 'message': 'Request validation failed',
-                'details': exc.errors(),
+                'details': details,
             },
         },
     )
