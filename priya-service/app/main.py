@@ -365,6 +365,7 @@ async def health():
         'ttsReady': tts_service.status in {'ready', 'lazy-ready'},
         'ttsStatus': tts_service.status,
         'ttsDevice': tts_service.device,
+        'ttsConfiguredDevice': str(getattr(settings, 'tts_device', 'cpu')),
         'ttsModelLoadLatencyMs': tts_service.load_latency_ms,
         'ttsLatestTimings': tts_service.latest_timings,
         'ttsVoice': PRIYA_VOICE_NAME,
@@ -438,6 +439,18 @@ async def tts(request: TTSRequest):
         raise HTTPException(
             status_code=503,
             detail={'code': 'TTS_UNAVAILABLE', 'message': str(exc)},
+        ) from exc
+    except Exception as exc:
+        # Unexpected model/driver errors (for example Windows DLL policy)
+        # must not leak tracebacks or synthesized student data to the client.
+        # Keep the traceback in the service terminal for trusted developers.
+        logger.exception('Priya synthesis failed unexpectedly: %s', type(exc).__name__)
+        raise HTTPException(
+            status_code=503,
+            detail={
+                'code': 'TTS_GENERATION_FAILED',
+                'message': 'Local Priya synthesis failed; inspect the Python 8001 server traceback.',
+            },
         ) from exc
 
 

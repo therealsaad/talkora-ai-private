@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'talkora-ai-starter/**'
+      - 'priya-service/**'
       - '.github/workflows/ai-python-checks.yml'
   push:
     branches: [main]
     paths:
       - 'talkora-ai-starter/**'
+      - 'priya-service/**'
       - '.github/workflows/ai-python-checks.yml'
 
 jobs:
@@ -31,3 +33,17 @@ jobs:
           TALKORA_ENV: test
           TALKORA_CLASS1_HINTS_APPROVED: 'false'
         run: python -m pytest -q tests
+
+  priya-8001-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal API/test packages (no torch or model downloads)
+        run: |
+          python -m pip install fastapi==0.116.1 httpx==0.28.1 python-multipart==0.0.20 pydantic-settings==2.10.1 soundfile==0.13.1
+      - name: Verify 8001 health and sanitized TTS exceptions
+        working-directory: priya-service
+        run: python -m unittest discover -s tests -p 'test_priya_8001_contract.py' -v
