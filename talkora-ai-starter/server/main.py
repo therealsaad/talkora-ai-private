@@ -9,7 +9,12 @@ from pydantic import BaseModel, Field
 from server.bridge_security import require_bridge_key, require_experimental_chat_approval
 
 ROOT = Path(__file__).resolve().parents[1]
-LESSONS = {x['level_id']: x for x in json.loads((ROOT / 'datasets/curriculum/seed.json').read_text(encoding='utf-8'))}
+# The experimental /chat sample seed is intentionally untracked. Missing
+# prototype data must never prevent the authenticated Node /v1/brain/respond
+# syllabus service from starting. An empty registry fails /chat closed.
+seed_path = ROOT / 'datasets/curriculum/seed.json'
+LESSONS = ({x['level_id']: x for x in json.loads(seed_path.read_text(encoding='utf-8'))}
+           if seed_path.is_file() else {})
 SYSTEM = (ROOT / 'prompts/miss_julie.txt').read_text(encoding='utf-8')
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
 MODEL = os.getenv('OLLAMA_MODEL', 'qwen3:4b-instruct')
