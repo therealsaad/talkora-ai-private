@@ -104,3 +104,32 @@ def test_local_qwen_turn_reads_actual_child_answer_and_rejects_fake_mastery(monk
         asyncio.run(teacher.first_day_qwen_coach('en', 'Skip like a bunny',
                                                  'I can skip', 'jump', 0, decision))
     assert blocked.value.status_code == 502
+
+def test_v3_brain_endpoint_reaches_adaptive_coach_without_touching_legacy(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server.main import app
+    import server.class1 as class1
+
+    calls = []
+    async def fake_coach(language, title, question, transcript, hint_level, decision):
+        calls.append((language, title, transcript, decision['retry']))
+        return 'You told me jump! Our school action word is skip. Let us try skip.'
+
+    monkeypatch.setenv('TALKORA_CLASS1_QWEN_PILOT', 'true')
+    monkeypatch.setattr(class1, 'first_day_qwen_coach', fake_coach)
+    client = TestClient(app)
+    answer = client.post('/v1/brain/respond', json={
+        'grade': 1, 'levelId': 'g01-l01',
+        'activityTitle': 'Skip like a bunny',
+        'digitalType': 'FIRST_DAY_VOICE_SCENE',
+        'currentQuestion': 'Say in English what you can do. I can skip.',
+        'studentMessage': 'jump',
+        'preferredExplanationLanguage': 'English',
+    })
+    assert answer.status_code == 200, answer.text
+    result = answer.json()
+    assert result['message'].startswith('You told me jump!')
+    assert result['modelSentence'] == 'I can skip.'
+    assert result['shouldRetry'] is True
+    assert result['activityComplete'] is False
+    assert calls == [('en', 'Skip like a bunny', 'jump', True)]

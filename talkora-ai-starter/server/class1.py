@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from .class1_adaptive import (CONTEXT_WORDS, FOUNDATION_WORDS, SYSTEM_INSTRUCTIONS,
                               curriculum_context, has_supported_school_sentence,
                               is_simple_repeat, select_teaching_plan)
+from .class1_first_day import first_day_voice_reply, first_day_qwen_coach, scene_for_title
 
 LESSON = json.loads((Path(__file__).resolve().parents[1] / 'phase3/class1.json').read_text(encoding='utf-8'))
 WORDS = set(LESSON['approved_foundation_words'])
@@ -113,6 +114,41 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         req.preferredExplanationLanguage.lower())
     if lang is None:
         raise HTTPException(422, 'Unsupported explanation language')
+    # Class 1 v3 is a specific, reviewed ten-scene syllabus path.
+    # Keep the legacy v2 foundation handler below exactly as it was.
+    # The trained/local Qwen response changes ONLY the child-facing coaching,
+    # while the deterministic First Day educator decision controls the retry,
+    # model sentence and activityComplete=False.
+    scene = scene_for_title(req.activityTitle)
+    if scene is not None:
+        first_day = first_day_voice_reply(
+            lang, req.activityTitle, req.currentQuestion,
+            req.studentMessage, int(req.hintLevel or 0),
+        )
+        if first_day is None:
+            raise HTTPException(422, 'Unrecognized First Day scene')
+        spoken = await first_day_qwen_coach(
+            lang, req.activityTitle, req.currentQuestion, req.studentMessage,
+            int(req.hintLevel or 0), first_day,
+        )
+        action = first_day['action']
+        return {
+            'message': spoken,
+            'reaction': 'modeling' if first_day['retry'] else 'encouraging',
+            'responseQuality': first_day['quality'],
+            'followUpQuestion': first_day['follow'],
+            'correction': {'needed': False, 'original': '',
+                           'corrected': '', 'explanation': ''},
+            'memoryUpdates': [],
+            'recommendedAction': action,
+            'teachingAction': action,
+            'modelSentence': first_day['model'],
+            'activityComplete': False,
+            'shouldRetry': first_day['retry'],
+            'hintLevel': min(3, max(0, int(req.hintLevel or 0)) + (1 if first_day['retry'] else 0)),
+            'detectedSkills': [],
+            'remainingSkills': [],
+        }
     target = active_target(req.currentQuestion, req.activityTitle)
     observed = observed_target(req.studentMessage, target)
     plan = select_teaching_plan(req, observed, target)
