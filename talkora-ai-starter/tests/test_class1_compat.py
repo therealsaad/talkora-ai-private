@@ -1,10 +1,10 @@
 """Offline tests; mock Qwen so no Ollama model download or AWS credentials needed."""
-import asyncio
-
 import pytest
-from httpx import ASGITransport, AsyncClient
+from fastapi.testclient import TestClient
 from server.main import app
 import server.class1 as class1
+
+client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def pilot(monkeypatch):
@@ -17,10 +17,7 @@ def request(**updates):
     body={'grade':1,'levelId':'g01-l01','studentMessage':'at',
           'currentQuestion':'Say the word at.', 'preferredExplanationLanguage':'English'}
     body.update(updates)
-    async def send():
-        async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as client:
-            return await client.post('/v1/brain/respond', json=body)
-    return asyncio.run(send())
+    return client.post('/v1/brain/respond', json=body)
 
 
 def test_correct_word_is_not_a_pronunciation_certificate():
@@ -56,7 +53,7 @@ def test_disabled_pilot(monkeypatch):
 
 
 def test_existing_kg_route_still_present():
-    r=request(grade=0,levelId='g00-l02',studentMessage='apple')
+    r=client.post('/v1/brain/respond',json={'grade':0,'levelId':'g00-l02','studentMessage':'apple'})
     assert r.status_code==422
 
 

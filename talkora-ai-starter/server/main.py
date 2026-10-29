@@ -9,14 +9,7 @@ from pydantic import BaseModel, Field
 from server.bridge_security import require_bridge_key, require_experimental_chat_approval
 
 ROOT = Path(__file__).resolve().parents[1]
-# Only load the small, version-controlled pilot fixtures. Training datasets are
-# deliberately gitignored and must never be a runtime startup dependency.
-PILOT_LESSON_FILES = (ROOT / 'phase3/kg1.json', ROOT / 'phase3/class1.json')
-LESSONS = {
-    lesson['level_id']: lesson
-    for path in PILOT_LESSON_FILES
-    for lesson in [json.loads(path.read_text(encoding='utf-8'))]
-}
+LESSONS = {x['level_id']: x for x in json.loads((ROOT / 'datasets/curriculum/seed.json').read_text(encoding='utf-8'))}
 SYSTEM = (ROOT / 'prompts/miss_julie.txt').read_text(encoding='utf-8')
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
 MODEL = os.getenv('OLLAMA_MODEL', 'qwen3:4b-instruct')
