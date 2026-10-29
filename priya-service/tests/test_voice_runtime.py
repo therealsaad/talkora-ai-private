@@ -51,6 +51,28 @@ class VoiceRuntimeTests(unittest.TestCase):
         self.assertEqual(result['ttsProvider'], 'python-priya-cache')
         self.assertIn('parlerImport', result)
 
+    def test_health_reports_requested_cuda_device_before_cold_start(self):
+        module = importlib.import_module('app.main')
+        with patch.object(module.qwen_client, 'status',
+                          new=AsyncMock(return_value={'reachable': False, 'modelAvailable': False})), \
+             patch.object(ParlerService, 'available', new_callable=PropertyMock, return_value=True), \
+             patch.object(ParlerService, 'model_available', new_callable=PropertyMock, return_value=True), \
+             patch.object(module.torch.cuda, 'is_available', return_value=False):
+            health = asyncio.run(module.health())
+        self.assertEqual(health['ttsConfiguredDevice'], settings.tts_device)
+        self.assertIn('ttsVoiceId', health)
+
+    def test_tts_unexpected_model_failure_is_a_safe_503(self):
+        module = importlib.import_module('app.main')
+        from fastapi import HTTPException
+        with patch.object(module, '_synthesize_priya',
+                          new=AsyncMock(side_effect=OSError('policy blocked DLL'))):
+            with self.assertRaises(HTTPException) as result:
+                asyncio.run(module.tts(module.TTSRequest(text='Hello Grade One', voice='Priya')))
+        self.assertEqual(result.exception.status_code, 503)
+        self.assertEqual(result.exception.detail['code'], 'TTS_GENERATION_FAILED')
+        self.assertNotIn('policy blocked DLL', result.exception.detail['message'])
+
     def test_known_lesson_line_is_served_from_the_existing_cache_identity(self):
         text = (
             'Welcome to Favourite Fair! Let us discover favourite things and '
