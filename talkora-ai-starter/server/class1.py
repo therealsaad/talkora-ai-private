@@ -16,7 +16,7 @@ from .class1_adaptive import (CONTEXT_WORDS, FOUNDATION_WORDS, SYSTEM_INSTRUCTIO
                               is_simple_repeat, select_teaching_plan)
 from .class1_hint_gate import validate_model_hint
 from .class1_language import resolve_support_language
-from .class1_first_day import first_day_voice_reply
+from .class1_first_day import first_day_voice_reply, first_day_qwen_qa
 
 LESSON = json.loads((Path(__file__).resolve().parents[1] / 'phase3/class1.json').read_text(encoding='utf-8'))
 WORDS = set(LESSON['approved_foundation_words'])
@@ -311,6 +311,16 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         req.studentMessage, int(req.hintLevel or 0),
     )
     if first_day is not None:
+        # Only explicit syllabus questions may use the educator-gated Qwen QA
+        # path. The authored model and Node mastery decision never change.
+        student_question = bool(re.search(
+            r'\\b(?:what|why|how|meaning|means|explain)\\b|क्या|काय|म्हणजे|समझा|समजत',
+            req.studentMessage[:250], flags=re.I))
+        if student_question:
+            qa = await first_day_qwen_qa(
+                lang, req.activityTitle, req.currentQuestion, req.studentMessage)
+            if qa:
+                first_day['message'] = qa[0]
         return {
             'message': first_day['message'][:330],
             'reaction': 'modeling' if first_day['retry'] else 'encouraging',
