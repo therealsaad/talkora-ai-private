@@ -221,3 +221,13 @@ def test_poem_full_recital_needs_multiple_stanzas():
     ))
     hint = first_day_voice_reply('hi', title, '', 'I can skip', 2)
     assert hint['retry'] is True
+
+
+def test_poem_retry_repeats_same_two_lines_when_child_needs_help():
+    from server.class1_first_day import first_day_voice_reply
+    decision = first_day_voice_reply('hi', 'Poem lines 1–2: skip and run',
+                                     'Say both lines', 'बिल्ली', 2)
+    assert decision['retry'] is True
+    assert decision['follow'].count('See me skip') == 2
+    assert decision['follow'].count('See me run') == 2
+    assert 'skip' in decision['model']

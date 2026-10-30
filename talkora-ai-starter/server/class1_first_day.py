@@ -85,6 +85,7 @@ def first_day_voice_reply(language: str, title: str, question: str, transcript: 
     if scene is None:
         return None
     target, model = scene
+    poem_mode = any(marker.lower() in title.lower() for marker in POEM_SCENES)
     speech = (transcript or '')[:400].lower().strip()
     words = ' '.join(re.findall(r'[a-z]+', speech))
     # Match the Node scene-evidence policy, including natural inflections.
@@ -120,6 +121,8 @@ def first_day_voice_reply(language: str, title: str, question: str, transcript: 
         message = explanation
         follow = {'en': f'Now try with me: {model}', 'hi': f'अब मेरे साथ बोलो: {model}',
                   'mr': f'आता माझ्यासोबत म्हण: {model}'}[language]
+        if poem_mode and hint_level >= 1:
+            follow += f' Listen one more time, slowly: {model}'
         return dict(message=message, follow=follow, model=model, quality='UNCLEAR',
                     retry=True, action='MODEL_SENTENCE')
     if target_seen:
@@ -139,6 +142,8 @@ def first_day_voice_reply(language: str, title: str, question: str, transcript: 
     }[language]
     follow = {'en': f'Can you try: {model}', 'hi': f'अंग्रेज़ी में कहो: {model}',
               'mr': f'इंग्रजीत म्हण: {model}'}[language]
+    if poem_mode and hint_level >= 1:
+        follow += f' Listen one more time, slowly: {model}'
     return dict(message=message, follow=follow, model=model, quality='PARTIAL',
                 retry=True, action='MODEL_SENTENCE')
 
