@@ -197,3 +197,27 @@ def test_first_day_live_qwen_uses_bounded_conversation_history(monkeypatch):
     assert context['recent_dialogue'][-1] == 'student: last try was jump.'
     assert 'skip' in result
     assert context['target'] == 'skip'
+
+
+def test_poem_pair_requires_both_taught_lines_not_just_skip():
+    from server.class1_first_day import first_day_voice_reply, poem_attempt_is_complete
+    title = 'Poem lines 1–2: skip and run'
+    assert not poem_attempt_is_complete(title, 'skip')
+    assert not poem_attempt_is_complete(title, 'What does skip mean?')
+    assert poem_attempt_is_complete(title, 'See me skip. See me run.')
+    one = first_day_voice_reply('en', title, '', 'skip', 0)
+    assert one['retry'] is True
+    two = first_day_voice_reply('en', title, '', 'See me skip. See me run.', 0)
+    assert two['retry'] is False
+
+def test_poem_full_recital_needs_multiple_stanzas():
+    from server.class1_first_day import poem_attempt_is_complete, first_day_voice_reply
+    title='Poem finale: recite My First Day'
+    assert not poem_attempt_is_complete(title, 'skip run walk grin')
+    assert poem_attempt_is_complete(title, (
+        'See me skip. See me run. I am going to school like everyone. '
+        'See me walk. See me grin. When the bell rings I go in. '
+        'See me jump. See me play. I am in Grade One! Hip hip hurray!'
+    ))
+    hint = first_day_voice_reply('hi', title, '', 'I can skip', 2)
+    assert hint['retry'] is True
