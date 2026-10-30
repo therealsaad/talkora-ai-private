@@ -318,6 +318,7 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         first_day['message'] = await first_day_qwen_coach(
             lang, req.activityTitle, req.currentQuestion,
             req.studentMessage, int(req.hintLevel or 0), first_day,
+            history=req.conversationHistory,
         )
         return {
             'message': first_day['message'][:330],
