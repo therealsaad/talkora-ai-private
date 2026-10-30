@@ -133,3 +133,26 @@ def test_v3_brain_endpoint_reaches_adaptive_coach_without_touching_legacy(monkey
     assert result['shouldRetry'] is True
     assert result['activityComplete'] is False
     assert calls == [('en', 'Skip like a bunny', 'jump', True)]
+
+def test_first_day_variations_match_node_evidence_without_false_praise():
+    from server.class1_first_day import first_day_voice_reply
+    for scene, speech in [
+        ('Skip like a bunny', 'skipping'), ('Run in the playground', 'running'),
+        ('Give Miss Julie a grin', 'grin'), ('Ding dong!', 'ringing'),
+        ('Jump like a frog', 'jumping'), ('Time to go into class', 'classroom'),
+    ]:
+        decision = first_day_voice_reply('en', scene, 'Say it.', speech, 0)
+        assert decision is not None
+        assert decision['retry'] is False, (scene, speech)
+    for speech in ('billi', 'cat', 'skip?', 'what does skip mean?', 'मदद skip'):
+        decision = first_day_voice_reply('en', 'Skip like a bunny', 'Say skip.', speech, 0)
+        assert decision['retry'] is True, speech
+
+
+def test_first_day_kid_uses_hindi_example_but_stays_on_approved_english_target():
+    from server.class1_first_day import first_day_voice_reply
+    decision = first_day_voice_reply('hi', 'Skip like a bunny',
+                                     'Tell me in English.', 'billi', 1)
+    assert decision['model'] == 'I can skip.'
+    assert decision['retry'] is True
+    assert decision['quality'] == 'PARTIAL'
