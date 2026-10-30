@@ -31,7 +31,7 @@ def test_v3_first_day_uses_contextual_qwen_for_every_reply(monkeypatch):
     import server.class1 as class1
     from server.compat import BrainRequest
     calls = []
-    async def fake_model(language, title, question, transcript, hint_level, decision):
+    async def fake_model(language, title, question, transcript, hint_level, decision, history=None):
         calls.append((title, transcript, decision['retry']))
         return f'I heard {transcript}. Let us learn skip with your hopping fingers!'
     monkeypatch.setattr(class1, 'first_day_qwen_coach', fake_model)
@@ -111,7 +111,7 @@ def test_v3_brain_endpoint_reaches_adaptive_coach_without_touching_legacy(monkey
     import server.class1 as class1
 
     calls = []
-    async def fake_coach(language, title, question, transcript, hint_level, decision):
+    async def fake_coach(language, title, question, transcript, hint_level, decision, history=None):
         calls.append((language, title, transcript, decision['retry']))
         return 'You told me jump! Our school action word is skip. Let us try skip.'
 
@@ -156,3 +156,44 @@ def test_first_day_kid_uses_hindi_example_but_stays_on_approved_english_target()
     assert decision['model'] == 'I can skip.'
     assert decision['retry'] is True
     assert decision['quality'] == 'PARTIAL'
+
+
+def test_first_day_live_qwen_uses_bounded_conversation_history(monkeypatch):
+    import asyncio
+    import json
+    import server.class1_first_day as teacher
+    captured = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+        def json(self):
+            return {'message': {'content': json.dumps({
+                'message': 'I heard you! Our current English action word is skip. Try again.'
+            })}}
+    class MockOllama:
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *args):
+            return None
+        async def post(self, url, json):
+            captured.update(json)
+            return Response()
+
+    monkeypatch.setattr(teacher.httpx, 'AsyncClient', lambda **kw: MockOllama())
+    decision = teacher.first_day_voice_reply('en', 'Skip like a bunny',
+                                              'I can skip.', 'jump', 1)
+    history = ['student: I said jump.', 'missJulie: Try saying skip.',
+               'student: jump again.', 'missJulie: Let us learn together.',
+               'student: still not sure.', 'missJulie: One little step.',
+               'student: last try was jump.']
+    result = asyncio.run(teacher.first_day_qwen_coach(
+        'en', 'Skip like a bunny', 'I can skip.', 'jump', 1, decision,
+        history=history,
+    ))
+    context = json.loads(captured['messages'][1]['content'])
+    assert len(context['recent_dialogue']) == 6
+    assert context['recent_dialogue'][0].startswith('missJulie: Try')
+    assert context['recent_dialogue'][-1] == 'student: last try was jump.'
+    assert 'skip' in result
+    assert context['target'] == 'skip'
