@@ -1,0 +1,130 @@
+{
+  "utc": "2026-10-31T10:43:26.806269+00:00",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.10",
+  "model": "qwen3:4b-instruct",
+  "synthetic_only": true,
+  "request": {
+    "model": "qwen3:4b-instruct",
+    "stream": false,
+    "format": "json",
+    "options": {
+      "temperature": 0,
+      "num_predict": 24
+    },
+    "messages": [
+      {
+        "role": "system",
+        "content": "Choose a reviewed teaching wording. Return only {\"wordingIndex\":0} with a valid candidate index. Never add text or keys."
+      },
+      {
+        "role": "user",
+        "content": "{\"grade\": 1, \"strategy\": \"CORRECT\", \"observation\": \"MISMATCH\", \"language\": \"en\", \"candidates\": [\"Good effort. Listen: cat.\", \"Let us try together: cat.\"]}"
+      }
+    ]
+  },
+  "samples": [
+    {
+      "index": 0,
+      "model_state_before": "cold",
+      "size_vram": null,
+      "valid_choice": true,
+      "load_duration": 9405031700,
+      "prompt_eval_duration": 139345000,
+      "eval_duration": 146005000,
+      "total_duration": 9710973000,
+      "prompt_eval_count": 86,
+      "eval_count": 8,
+      "done_reason": "stop",
+      "wall_seconds": 9.703
+    },
+    {
+      "index": 1,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "load_duration": 12004300,
+      "prompt_eval_duration": 17014000,
+      "eval_duration": 133868000,
+      "total_duration": 172895000,
+      "prompt_eval_count": 86,
+      "eval_count": 8,
+      "done_reason": "stop",
+      "wall_seconds": 0.171
+    },
+    {
+      "index": 2,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "load_duration": 9776400,
+      "prompt_eval_duration": 16866000,
+      "eval_duration": 116524000,
+      "total_duration": 152442700,
+      "prompt_eval_count": 86,
+      "eval_count": 8,
+      "done_reason": "stop",
+      "wall_seconds": 0.157
+    },
+    {
+      "index": 3,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "load_duration": 8933600,
+      "prompt_eval_duration": 17606000,
+      "eval_duration": 115919000,
+      "total_duration": 150222000,
+      "prompt_eval_count": 86,
+      "eval_count": 8,
+      "done_reason": "stop",
+      "wall_seconds": 0.156
+    },
+    {
+      "index": 4,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "load_duration": 7715700,
+      "prompt_eval_duration": 17388000,
+      "eval_duration": 115689000,
+      "total_duration": 157614700,
+      "prompt_eval_count": 86,
+      "eval_count": 8,
+      "done_reason": "stop",
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 5,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "load_duration": 7387900,
+      "prompt_eval_duration": 17430000,
+      "eval_duration": 119231000,
+      "total_duration": 154344600,
+      "prompt_eval_count": 86,
+      "eval_count": 8,
+      "done_reason": "stop",
+      "wall_seconds": 0.156
+    }
+  ],
+  "service_8002": {
+    "available": false,
+    "error_type": "ConnectTimeout"
+  },
+  "summary": {
+    "cold": {
+      "n": 1,
+      "p50_seconds": 9.703,
+      "p95_seconds": 9.703,
+      "valid_choices": 1
+    },
+    "warm": {
+      "n": 5,
+      "p50_seconds": 0.157,
+      "p95_seconds": 0.172,
+      "valid_choices": 5
+    }
+  }
+}
