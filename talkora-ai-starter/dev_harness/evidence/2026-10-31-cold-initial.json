@@ -1,0 +1,1124 @@
+{
+  "utc": "2026-10-31T11:22:27.970696+00:00",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.10",
+  "syntheticOnly": true,
+  "port": 18152,
+  "turns": [
+    {
+      "scenario": "INTRODUCE",
+      "syntheticTranscript": "",
+      "language": "en",
+      "clientMs": 172.0,
+      "response": {
+        "message": "Under means below something. On means touching the top. The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which position word fits?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "0907bd4e-1f0d-4718-a57b-10a84ca39822",
+          "requestId": "9ae41bf6-63e9-4d61-8389-efde4509d652",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "cold",
+          "rejectionReason": null,
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 172.0,
+            "bridgeMs": 172.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "INTRODUCE",
+      "syntheticTranscript": "",
+      "language": "en",
+      "clientMs": 860.0,
+      "response": {
+        "message": "Under means below. On means touching the top.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which word fits: under or on?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "a57c3aa6-6f10-4a52-ac07-75eeb8f53957",
+          "requestId": "10e6479a-857c-4d88-8f8f-0aedb9574f22",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "generated",
+          "rejectionReason": null,
+          "wordingSource": "qwen-generated",
+          "latency": {
+            "providerMs": 860.0,
+            "bridgeMs": 860.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "on",
+      "language": "en",
+      "clientMs": 875.0,
+      "response": {
+        "message": "Under means below something. On means touching the top. The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which position word fits?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "a57c3aa6-6f10-4a52-ac07-75eeb8f53957",
+          "requestId": "d2735fb0-371e-4baa-bdb2-6ca902f015b9",
+          "revision": 2,
+          "strategyCandidate": "CORRECT",
+          "lexicalObservation": "LEXICAL_MISMATCH",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Out-of-scope English wording",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 875.0,
+            "bridgeMs": 875.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "on",
+      "language": "en",
+      "clientMs": 1015.0,
+      "response": {
+        "message": "Think of the box as a little roof. The ball is below it: under.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which position word fits?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "a57c3aa6-6f10-4a52-ac07-75eeb8f53957",
+          "requestId": "db9ee947-f615-4463-95e4-db6334a1d078",
+          "revision": 3,
+          "strategyCandidate": "RETEACH",
+          "lexicalObservation": "LEXICAL_MISMATCH",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Out-of-scope English wording",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 1015.0,
+            "bridgeMs": 1015.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "HINT",
+      "syntheticTranscript": "",
+      "language": "en",
+      "clientMs": 781.0,
+      "response": {
+        "message": "Under means below something. On means touching the top. The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which position word fits?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "a57c3aa6-6f10-4a52-ac07-75eeb8f53957",
+          "requestId": "86121d25-de64-4628-a810-64295a155298",
+          "revision": 4,
+          "strategyCandidate": "GUIDE",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Out-of-scope English wording",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 765.0,
+            "bridgeMs": 765.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "under",
+      "language": "en",
+      "clientMs": 938.0,
+      "response": {
+        "message": "Try another example without a hint.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which position word fits?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 0,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "a57c3aa6-6f10-4a52-ac07-75eeb8f53957",
+          "requestId": "80b20fea-21c3-4d4a-88e0-f929781ac738",
+          "revision": 5,
+          "strategyCandidate": "INDEPENDENT_CHECK",
+          "lexicalObservation": "LEXICAL_MATCH",
+          "answerSupport": "SUPPORTED",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": true,
+          "suppliesAnswer": false,
+          "providerStatus": "rejected",
+          "rejectionReason": "Out-of-scope English wording",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 938.0,
+            "bridgeMs": 938.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "under",
+      "language": "en",
+      "clientMs": 937.0,
+      "response": {
+        "message": "Try another example without a hint.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which position word fits?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 0,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "a57c3aa6-6f10-4a52-ac07-75eeb8f53957",
+          "requestId": "0b95b910-803d-48a0-94a1-67fcb75a40e0",
+          "revision": 6,
+          "strategyCandidate": "INDEPENDENT_CHECK",
+          "lexicalObservation": "LEXICAL_MATCH",
+          "answerSupport": "UNVERIFIED_INDEPENDENT",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": true,
+          "suppliesAnswer": false,
+          "providerStatus": "rejected",
+          "rejectionReason": "Out-of-scope English wording",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 922.0,
+            "bridgeMs": 922.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "INTRODUCE",
+      "syntheticTranscript": "",
+      "language": "hi",
+      "clientMs": 2125.0,
+      "response": {
+        "message": "Under का अर्थ नीचे है। On का अर्थ ऊपर की सतह पर है। The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खिलौना कप के नीचे है। कौन सा English शब्द सही जगह बताता है?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "1ef7b117-a6f2-4831-bd36-cad5ffb6bd80",
+          "requestId": "f56b2219-307b-4d12-9fd4-eb222a7a3aca",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Missing active target",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 2125.0,
+            "bridgeMs": 2125.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "नीचे",
+      "language": "hi",
+      "clientMs": 2047.0,
+      "response": {
+        "message": "गेंद डिब्बे के नीचे है। नीचे के लिए 'under' कहलाता है।",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खिलौना कप के नीचे है। 'under' का अर्थ क्या है?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "1ef7b117-a6f2-4831-bd36-cad5ffb6bd80",
+          "requestId": "21c1c704-6bab-476a-9893-bda1d3b1bb6e",
+          "revision": 2,
+          "strategyCandidate": "GUIDE",
+          "lexicalObservation": "SUPPORT_LANGUAGE_MEANING",
+          "answerSupport": "SUPPORTED",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "generated",
+          "rejectionReason": null,
+          "wordingSource": "qwen-generated",
+          "latency": {
+            "providerMs": 2047.0,
+            "bridgeMs": 2047.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "on",
+      "language": "hi",
+      "clientMs": 2032.0,
+      "response": {
+        "message": "गेंद डिब्बे के नीचे है। इसे 'under' कहते हैं।",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खिलौना कप के नीचे है। 'under' या 'on' किसके लिए सही है?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "1ef7b117-a6f2-4831-bd36-cad5ffb6bd80",
+          "requestId": "79a40196-989a-4002-baba-59acb21e2e84",
+          "revision": 3,
+          "strategyCandidate": "RETEACH",
+          "lexicalObservation": "LEXICAL_MISMATCH",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "generated",
+          "rejectionReason": null,
+          "wordingSource": "qwen-generated",
+          "latency": {
+            "providerMs": 2016.0,
+            "bridgeMs": 2016.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "under",
+      "language": "hi",
+      "clientMs": 2156.0,
+      "response": {
+        "message": "अब बिना संकेत के नया उदाहरण सोचो।",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खिलौना कप के नीचे है। कौन सा English शब्द सही जगह बताता है?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 0,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "1ef7b117-a6f2-4831-bd36-cad5ffb6bd80",
+          "requestId": "6ca60aaf-509e-46c0-9e38-6541bfc8313b",
+          "revision": 4,
+          "strategyCandidate": "INDEPENDENT_CHECK",
+          "lexicalObservation": "LEXICAL_MATCH",
+          "answerSupport": "SUPPORTED",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": true,
+          "suppliesAnswer": false,
+          "providerStatus": "rejected",
+          "rejectionReason": "Independent check revealed answer",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 2156.0,
+            "bridgeMs": 2156.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "INTRODUCE",
+      "syntheticTranscript": "",
+      "language": "mr",
+      "clientMs": 2234.0,
+      "response": {
+        "message": "Under म्हणजे खाली. On म्हणजे वरच्या पृष्ठभागावर. The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खेळणे कपाच्या खाली आहे. कोणता English शब्द ही जागा सांगतो?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "8457fe9b-19c5-4b63-88e6-c57b62cb7025",
+          "requestId": "cfc9a1d4-3205-4d98-bde8-10df308d8ac3",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Missing active target",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 2219.0,
+            "bridgeMs": 2219.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "खाली",
+      "language": "mr",
+      "clientMs": 2141.0,
+      "response": {
+        "message": "Under म्हणजे खाली. On म्हणजे वरच्या पृष्ठभागावर. The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खेळणे कपाच्या खाली आहे. कोणता English शब्द ही जागा सांगतो?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "8457fe9b-19c5-4b63-88e6-c57b62cb7025",
+          "requestId": "19f735ef-5654-475f-86f5-7dda20d4b42d",
+          "revision": 2,
+          "strategyCandidate": "GUIDE",
+          "lexicalObservation": "SUPPORT_LANGUAGE_MEANING",
+          "answerSupport": "SUPPORTED",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Missing active target",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 2141.0,
+            "bridgeMs": 2141.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "on",
+      "language": "mr",
+      "clientMs": 1984.0,
+      "response": {
+        "message": "चेंडू खाली आहे, त्याचा अर्थ 'under' आहे.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खेळणे कपाच्या खाली आहे. एखादा English शब्द कोणता आहे?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "8457fe9b-19c5-4b63-88e6-c57b62cb7025",
+          "requestId": "bc8b1c13-3d74-4892-bebd-063695f379f1",
+          "revision": 3,
+          "strategyCandidate": "RETEACH",
+          "lexicalObservation": "LEXICAL_MISMATCH",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "generated",
+          "rejectionReason": null,
+          "wordingSource": "qwen-generated",
+          "latency": {
+            "providerMs": 1984.0,
+            "bridgeMs": 1984.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ANSWER",
+      "syntheticTranscript": "under",
+      "language": "mr",
+      "clientMs": 2172.0,
+      "response": {
+        "message": "खालीला एक वस्तु खाली आहे. एंग्लिश शब्द काय आहे?",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खेळणे कपाच्या खाली आहे. कोणता English शब्द ही जागा सांगतो?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 0,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "8457fe9b-19c5-4b63-88e6-c57b62cb7025",
+          "requestId": "21ac937a-2e61-44af-a51f-43fce1f4ea19",
+          "revision": 4,
+          "strategyCandidate": "INDEPENDENT_CHECK",
+          "lexicalObservation": "LEXICAL_MATCH",
+          "answerSupport": "SUPPORTED",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": true,
+          "suppliesAnswer": false,
+          "providerStatus": "generated",
+          "rejectionReason": null,
+          "wordingSource": "qwen-generated",
+          "latency": {
+            "providerMs": 2172.0,
+            "bridgeMs": 2172.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "EXPLAIN",
+      "syntheticTranscript": "",
+      "language": "en",
+      "clientMs": 922.0,
+      "response": {
+        "message": "Under means below. On means touching the top.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "The toy is below the cup. Which word fits: under or on?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "4377f62a-3654-4c12-babe-e633f39f68bb",
+          "requestId": "7a74e6ec-bdc1-4a77-b64d-5e0b1334eda1",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "generated",
+          "rejectionReason": null,
+          "wordingSource": "qwen-generated",
+          "latency": {
+            "providerMs": 922.0,
+            "bridgeMs": 922.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "EXPLAIN",
+      "syntheticTranscript": "",
+      "language": "hi",
+      "clientMs": 2141.0,
+      "response": {
+        "message": "Under का अर्थ नीचे है। On का अर्थ ऊपर की सतह पर है। The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खिलौना कप के नीचे है। कौन सा English शब्द सही जगह बताता है?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "78513dd4-7113-4182-a276-3780ee04697e",
+          "requestId": "47711a01-efd9-494a-b2f7-9604bd9311c2",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Missing active target",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 2141.0,
+            "bridgeMs": 2141.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "EXPLAIN",
+      "syntheticTranscript": "",
+      "language": "mr",
+      "clientMs": 2234.0,
+      "response": {
+        "message": "Under म्हणजे खाली. On म्हणजे वरच्या पृष्ठभागावर. The ball is under the box.",
+        "reaction": "encouraging",
+        "responseQuality": "UNCLEAR",
+        "followUpQuestion": "खेळणे कपाच्या खाली आहे. कोणता English शब्द ही जागा सांगतो?",
+        "correction": {
+          "needed": false,
+          "original": "",
+          "corrected": "",
+          "explanation": ""
+        },
+        "memoryUpdates": [],
+        "recommendedAction": "ASK_FOLLOW_UP",
+        "teachingAction": "ASK_FOLLOW_UP",
+        "modelSentence": null,
+        "activityComplete": false,
+        "shouldRetry": false,
+        "hintLevel": 1,
+        "detectedSkills": [],
+        "remainingSkills": [],
+        "teaching": {
+          "contractVersion": "teaching.dev.v1",
+          "synthetic": true,
+          "scope": {
+            "namespace": "synthetic",
+            "bookId": "position-fixture",
+            "edition": "test-only",
+            "trackId": "demo",
+            "lessonId": "positions",
+            "activityId": "under",
+            "objectiveId": "below-relation",
+            "version": "v1"
+          },
+          "sessionId": "6b27c673-1e31-4739-8619-5c26f5d61e39",
+          "requestId": "11cb0a13-ce61-4bc9-8372-0dbd5b239dd1",
+          "revision": 1,
+          "strategyCandidate": "EXPLAIN",
+          "lexicalObservation": "UNAVAILABLE",
+          "answerSupport": "UNKNOWN",
+          "validatedLearning": false,
+          "acceptedEvidence": [],
+          "independentCheckRequested": false,
+          "suppliesAnswer": true,
+          "providerStatus": "rejected",
+          "rejectionReason": "Missing active target",
+          "wordingSource": "reviewed-fallback",
+          "latency": {
+            "providerMs": 2234.0,
+            "bridgeMs": 2234.0
+          }
+        }
+      }
+    }
+  ],
+  "harnessHealth": {
+    "status": "ok",
+    "developmentOnly": true,
+    "syntheticOnly": true,
+    "entrypoint": "dev_harness.app:create_app",
+    "productionIntegration": false
+  },
+  "legacyContract": {
+    "httpStatus": 200,
+    "response": {
+      "message": "I heard 'at'. Nice effort! Let's say it together once more.",
+      "reaction": "encouraging",
+      "responseQuality": "ADEQUATE",
+      "followUpQuestion": "Can you say 'at' once more?",
+      "correction": {
+        "needed": false,
+        "original": "",
+        "corrected": "",
+        "explanation": ""
+      },
+      "memoryUpdates": [],
+      "recommendedAction": "ASK_FOLLOW_UP",
+      "teachingAction": "ASK_FOLLOW_UP",
+      "modelSentence": "Look at me.",
+      "activityComplete": false,
+      "shouldRetry": false,
+      "hintLevel": 0,
+      "detectedSkills": [],
+      "remainingSkills": []
+    }
+  },
+  "existing8002": {
+    "available": false,
+    "errorType": "ConnectTimeout"
+  },
+  "rawProviderMeasurement": {
+    "model": "qwen3:4b-instruct",
+    "coldBefore": true,
+    "wallMs": 4219.0,
+    "load_duration": 3385256000,
+    "prompt_eval_duration": 183385000,
+    "eval_duration": 629734000,
+    "eval_count": 35,
+    "done_reason": "stop",
+    "acceptedWording": true,
+    "message": "Under means below. On means touching the top.",
+    "question": "The toy is below the cup. Which word fits: under or on?"
+  },
+  "summary": {
+    "generated": {
+      "n": 6,
+      "clientP50Ms": 1984.0,
+      "clientP95Ms": 2172.0,
+      "providerP50Ms": 1984.0,
+      "bridgeOverheadP50Ms": 0.0
+    },
+    "cold": {
+      "n": 1,
+      "clientP50Ms": 172.0,
+      "clientP95Ms": 172.0,
+      "providerP50Ms": 172.0,
+      "bridgeOverheadP50Ms": 0.0
+    },
+    "rejected": {
+      "n": 11,
+      "clientP50Ms": 2125.0,
+      "clientP95Ms": 2234.0,
+      "providerP50Ms": 2125.0,
+      "bridgeOverheadP50Ms": 0.0
+    }
+  }
+}
