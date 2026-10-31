@@ -1,0 +1,181 @@
+{
+  "utc": "2026-10-31T10:45:13.853464+00:00",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.10",
+  "model": "qwen3:4b-instruct",
+  "synthetic_only": true,
+  "path": "selector",
+  "request": {
+    "model": "qwen3:4b-instruct",
+    "stream": false,
+    "format": "json",
+    "options": {
+      "temperature": 0,
+      "num_predict": 24
+    },
+    "messages": [
+      {
+        "role": "system",
+        "content": "Choose a reviewed teaching wording. Return only {\"wordingIndex\":0} with a valid candidate index. Never add text or keys."
+      },
+      {
+        "role": "user",
+        "content": "{\"grade\": 1, \"strategy\": \"CORRECT\", \"observation\": \"LEXICAL_MISMATCH\", \"language\": \"en\", \"candidates\": [\"Good effort. Listen: cat.\", \"Let us try together: cat.\"]}"
+      }
+    ]
+  },
+  "samples": [
+    {
+      "index": 0,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.203
+    },
+    {
+      "index": 1,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.157
+    },
+    {
+      "index": 2,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 3,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.171
+    },
+    {
+      "index": 4,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.157
+    },
+    {
+      "index": 5,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 6,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.156
+    },
+    {
+      "index": 7,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.157
+    },
+    {
+      "index": 8,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 9,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.171
+    },
+    {
+      "index": 10,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.157
+    },
+    {
+      "index": 11,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.156
+    },
+    {
+      "index": 12,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.156
+    },
+    {
+      "index": 13,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.156
+    },
+    {
+      "index": 14,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 15,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 16,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 17,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.172
+    },
+    {
+      "index": 18,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.171
+    },
+    {
+      "index": 19,
+      "model_state_before": "warm",
+      "size_vram": 3180247121,
+      "valid_choice": true,
+      "wall_seconds": 0.157
+    }
+  ],
+  "service_8002": {
+    "available": false,
+    "error_type": "ConnectTimeout"
+  },
+  "summary": {
+    "warm": {
+      "n": 20,
+      "p50_seconds": 0.171,
+      "p95_seconds": 0.172,
+      "valid_choices": 20
+    }
+  }
+}

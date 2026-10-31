@@ -35,9 +35,9 @@ class Strategy(str, Enum):
 
 
 class Observation(str, Enum):
-    MATCH = "MATCH"
-    PARTIAL = "PARTIAL"
-    MISMATCH = "MISMATCH"
+    MATCH = "LEXICAL_MATCH"
+    PARTIAL = "LEXICAL_OVERLAP"
+    MISMATCH = "LEXICAL_MISMATCH"
     AMBIGUOUS = "AMBIGUOUS"
     UNAVAILABLE = "UNAVAILABLE"
     OFF_TOPIC = "OFF_TOPIC"
@@ -53,10 +53,40 @@ def normalize(text: str) -> str:
 
 # Defense in depth for server-authored cards, not a general child-safety classifier.
 UNSAFE = re.compile(
-    r"https?://|www\.|[<>{}\[\]]|\b(?:password|phone|address|email|secret|"
-    r"unlock|mastered|xp|iq|score|perfect|stupid|idiot|kill|sex|"
-    r"your name|your school name|ignore instructions|system prompt)\b", re.I
+    r"https?://|www\.|[<>{}\[\]]|\b(?:stupid|idiot|kill|sex|"
+    r"ignore instructions|system prompt|perfect pronunciation|your score|your iq)\b|"
+    r"\byou (?:have )?mastered\b|\b(?:award xp|unlock (?:the )?lesson)\b", re.I
 )
+# Vocabulary such as 'your name', 'address' and 'phone' is not itself a request
+# to disclose data. Detect solicitation instead; reviewed fictional dialogue has
+# an explicit narrow exception for names only, never real identifying details.
+PRIVATE_REQUEST = re.compile(
+    r"\b(?:what(?:'s| is)|tell|give|share|send|say|write|enter|type|spell|provide|ask|request|"
+    r"where|which|when|how can i contact|(?:can|may) i (?:have|know))\b[^.!?]{0,90}\b(?:your|real|home|personal)\b"
+    r"[^.!?]{0,40}\b(?:name|address|phone|number|email|password|school|location|secret|date of birth|birthday)\b|"
+    r"\bwhere do you live\b|\b(?:tell|give|share|send|enter|type|provide)\b"
+    r"[^.!?]{0,60}\b(?:phone number|password|email address|home address)\b|"
+    r"(?:तुम्हारा|अपना|तुमचा|तुझे|आपका).{0,25}(?:नाम|नाव|पता|पत्ता|फोन|पासवर्ड).{0,20}(?:बताओ|सांग|लिखो|लिहा)|"
+    r"(?:तुम्हारा|तुमचे|तुझे|आपका).{0,15}(?:नाम|नाव).{0,12}(?:क्या|काय)", re.I
+)
+FICTIONAL_NAME_REQUEST = re.compile(
+    r"\bask (?:a |the )?(?:fictional (?:puppet|character)|puppet|character)"
+    r"[, :]{0,4}['\"]?what(?:'s| is) your name\b", re.I
+)
+QUOTED_VOCABULARY = re.compile(
+    r"\b(?:say|read|write|spell) the (?:word|words|phrase) ['\"]"
+    r"(?:your name|address|phone|email|password)['\"]", re.I
+)
+
+
+def requests_private_data(text: str, *, fictional_names: bool = False) -> bool:
+    text = unicodedata.normalize("NFKC", text)
+    text = QUOTED_VOCABULARY.sub("vocabulary practice", text)
+    if fictional_names:
+        # Strip only the exact reviewed fictional-name question. Other requests
+        # in the same card still undergo the privacy check.
+        text = FICTIONAL_NAME_REQUEST.sub("fictional dialogue", text)
+    return bool(PRIVATE_REQUEST.search(text))
 
 
 class Card(FrozenModel):
@@ -66,6 +96,7 @@ class Card(FrozenModel):
     variants: tuple[str, ...] = Field(min_length=1, max_length=4)
     question: str = Field(min_length=1, max_length=200)
     supplies_answer: bool = False
+    fictional_names: bool = False
     model_sentence: str | None = Field(default=None, max_length=200)
 
     @model_validator(mode="after")
@@ -73,7 +104,7 @@ class Card(FrozenModel):
         if any(not text.strip() for text in (*self.variants, self.question)):
             raise ValueError("Missing authored teaching wording")
         for text in (*self.variants, self.question, self.model_sentence or ""):
-            if len(text) > 240 or UNSAFE.search(text) or any(
+            if len(text) > 240 or UNSAFE.search(unicodedata.normalize("NFKC", text)) or requests_private_data(text, fictional_names=self.fictional_names) or any(
                 unicodedata.category(char).startswith("C") for char in text
             ):
                 raise ValueError("Unsafe or oversized authored teaching card")
@@ -85,6 +116,23 @@ class Card(FrozenModel):
         return self
 
 
+ObjectiveKey = tuple[str, str, str, str, str, str, str, str]
+
+
+class CurriculumRef(FrozenModel):
+    """Proposed internal namespace adapter; dataset IDs still require Z.ai/PM agreement."""
+    namespace: str = Field(min_length=1, max_length=80)
+    book_id: str = Field(min_length=1, max_length=80)
+    edition: str = Field(min_length=1, max_length=80)
+    track_id: str = Field(min_length=1, max_length=80)
+
+    @model_validator(mode="after")
+    def nonblank_identity(self):
+        if any(not value.strip() for value in (self.namespace, self.book_id, self.edition, self.track_id)):
+            raise ValueError("Missing curriculum namespace identity")
+        return self
+
+
 class Objective(FrozenModel):
     """Internal curriculum adapter, NOT a replacement Z.ai dataset schema.
 
@@ -92,6 +140,8 @@ class Objective(FrozenModel):
     trusted caller may populate this registry. Synthetic objectives are test-only.
     """
     objective_id: str = Field(min_length=1, max_length=80)
+    curriculum: CurriculumRef
+    review_status: Literal["PENDING", "APPROVED"] = "PENDING"
     activity_id: str = Field(min_length=1, max_length=80)
     lesson_id: str = Field(min_length=1, max_length=80)
     version: str = Field(min_length=1, max_length=80)
@@ -137,8 +187,10 @@ class Objective(FrozenModel):
         return self
 
     @property
-    def key(self) -> tuple[str, str, str, str]:
-        return self.lesson_id, self.activity_id, self.objective_id, self.version
+    def key(self) -> ObjectiveKey:
+        ref = self.curriculum
+        return (ref.namespace, ref.book_id, ref.edition, ref.track_id,
+                self.lesson_id, self.activity_id, self.objective_id, self.version)
 
 
 class Turn(FrozenModel):
@@ -240,12 +292,14 @@ class Registry:
         for objective in objectives:
             if objective.synthetic and not allow_synthetic:
                 raise ObjectiveUnavailable("Synthetic curriculum is test-only")
+            if not objective.synthetic and objective.review_status != "APPROVED":
+                raise ObjectiveUnavailable("Curriculum has not been approved for student use")
             if objective.key in self._objectives:
                 raise ObjectiveUnavailable("Duplicate objective identity")
             self._objectives[objective.key] = objective
 
-    def resolve(self, key: tuple[str, str, str, str], *, grade: int,
-                authorized_keys: frozenset[tuple[str, str, str, str]]) -> Objective:
+    def resolve(self, key: ObjectiveKey, *, grade: int,
+                authorized_keys: frozenset[ObjectiveKey]) -> Objective:
         # Permission must come from Node/trusted server code, never an HTTP extra field.
         objective = self._objectives.get(key)
         if key not in authorized_keys or objective is None or objective.grade != grade:
@@ -263,9 +317,9 @@ class QwenWordingSelector:
     Two attempts at most under one wall-clock deadline, including connection
     and response parsing. One transient retry only. Never switches providers.
     """
-    def __init__(self, *, timeout: float = 4.0, client: httpx.AsyncClient | None = None):
-        if not 0 < timeout <= 6:
-            raise ValueError("Selector deadline must be at most six seconds")
+    def __init__(self, *, timeout: float = 1.0, client: httpx.AsyncClient | None = None):
+        if not 0 < timeout <= 2:
+            raise ValueError("Warm-only selector deadline must be at most two seconds")
         self.timeout = timeout
         self.client = client
 
@@ -289,6 +343,18 @@ class QwenWordingSelector:
         }
 
         async def request(client: httpx.AsyncClient) -> int | None:
+            # Optional wording selection never loads a cold model in a child turn.
+            # This check and all attempts share the same wall-clock deadline.
+            try:
+                status = await client.get(address + "/api/ps")
+                status.raise_for_status()
+                loaded = status.json()["models"]
+                if not isinstance(loaded, list) or not any(
+                    isinstance(model, dict) and model.get("name") == payload["model"] for model in loaded
+                ):
+                    return None
+            except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                return None
             for attempt in range(2):
                 try:
                     # Stream and bound upstream bytes before decoding, even for faulty Ollama.
@@ -332,26 +398,21 @@ class Guidance(FrozenModel):
     supplies_answer: bool
     wording_source: Literal["reviewed", "qwen-selected"]
 
-    def legacy_response(self) -> dict:
-        """Contract preview for tests/review only; never installed on a route."""
-        strategies = {
-            Strategy.MODEL: "MODEL_SENTENCE", Strategy.GUIDE: "GIVE_HINT",
-            Strategy.CORRECT: "GENTLE_CORRECTION", Strategy.RETEACH: "MODEL_SENTENCE",
-            Strategy.LISTEN: "CLARIFY", Strategy.EXPLAIN: "CLARIFY",
-        }
-        action = strategies.get(self.decision.strategy, "ASK_FOLLOW_UP")
-        quality = "UNCLEAR" if self.decision.observation in (
-            Observation.UNAVAILABLE, Observation.AMBIGUOUS, Observation.OFF_TOPIC
-        ) else "ADEQUATE" if self.decision.observation == Observation.MATCH else "PARTIAL"
+    def advisory_response(self) -> dict:
+        """Internal review-only representation, deliberately NOT the legacy API.
+
+        No lexical-to-responseQuality conversion is safe: existing consumers may
+        interpret that field as evaluation. A future adapter needs PM approval.
+        """
         return {
-            "message": self.message, "reaction": "encouraging", "responseQuality": quality,
-            "followUpQuestion": self.question,
-            "correction": {"needed": False, "original": "", "corrected": "", "explanation": ""},
-            "memoryUpdates": [], "recommendedAction": action, "teachingAction": action,
-            "modelSentence": self.model_sentence, "activityComplete": False,
-            "shouldRetry": self.decision.strategy in (Strategy.GUIDE, Strategy.CORRECT, Strategy.RETEACH),
-            "hintLevel": 1 if self.supplies_answer else 0,
-            "detectedSkills": [], "remainingSkills": [],
+            "kind": "advisory-teaching-candidate",
+            "validatedLearning": False,
+            "strategyCandidate": self.decision.strategy.value,
+            "lexicalObservation": self.decision.observation.value,
+            "answerSupport": self.decision.answer_support,
+            "messageCandidate": self.message, "questionCandidate": self.question,
+            "modelSentenceCandidate": self.model_sentence,
+            "suppliesAnswer": self.supplies_answer, "wordingSource": self.wording_source,
         }
 
 
@@ -359,8 +420,8 @@ class TeachingBrain:
     def __init__(self, registry: Registry, *, selector: QwenWordingSelector | None = None):
         self.registry, self.selector = registry, selector
 
-    async def respond(self, key: tuple[str, str, str, str], turn: Turn, *, grade: int,
-                      authorized_keys: frozenset[tuple[str, str, str, str]]) -> Guidance:
+    async def respond(self, key: ObjectiveKey, turn: Turn, *, grade: int,
+                      authorized_keys: frozenset[ObjectiveKey]) -> Guidance:
         objective = self.registry.resolve(key, grade=grade, authorized_keys=authorized_keys)
         decision = decide(objective, turn)
         card = next((c for c in objective.cards if c.strategy == decision.strategy and c.language == decision.language), None)
@@ -369,7 +430,7 @@ class TeachingBrain:
         # Rotate alternate explanations deterministically even with Ollama stopped.
         index = turn.mistakes % len(card.variants)
         source = "reviewed"
-        if self.selector is not None and turn.mistakes < 2 and decision.observation not in (Observation.UNAVAILABLE, Observation.OFF_TOPIC):
+        if self.selector is not None and len(card.variants) > 1 and turn.mistakes < 2 and decision.observation not in (Observation.UNAVAILABLE, Observation.OFF_TOPIC):
             selected = await self.selector.select(grade=grade, decision=decision, card=card)
             if selected is not None:
                 index = selected

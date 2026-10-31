@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from server.teaching import (
-    Card, Decision, Objective, ObjectiveUnavailable, Observation, QwenWordingSelector,
+    Card, CurriculumRef, Decision, Objective, ObjectiveUnavailable, Observation, QwenWordingSelector,
     Registry, Strategy, TeachingBrain, Turn, decide,
 )
 
@@ -43,6 +43,7 @@ def fixture_objective(grade=1):
                               question="Which animal makes this sound?" if grade < 10 else "Explain the distinction independently.",
                               supplies_answer=support))
     return Objective(objective_id="synthetic-animal", activity_id="synthetic-activity",
+                     curriculum=CurriculumRef(namespace="synthetic", book_id="fixture", edition="test", track_id="track-a"),
                      lesson_id="synthetic-lesson", version="test-v1", grade=grade,
                      review_reference="SYNTHETIC TEST ONLY", synthetic=True,
                      allowed_vocabulary=("cat", "dog", "animal", "meow"),
@@ -71,10 +72,9 @@ def test_observations_are_advisory(text, observation, strategy):
     result = run(Turn(transcript=text))
     assert result.decision.observation == observation
     assert result.decision.strategy == strategy
-    payload = result.legacy_response()
-    assert payload["activityComplete"] is False
-    assert payload["detectedSkills"] == payload["memoryUpdates"] == []
-    assert not {"xp", "mastery", "correct", "score", "unlock"} & payload.keys()
+    payload = result.advisory_response()
+    assert payload["validatedLearning"] is False
+    assert not {"xp", "mastery", "correct", "score", "unlock", "responseQuality", "activityComplete"} & payload.keys()
 
 
 @pytest.mark.parametrize("status", ["SILENCE", "STT_FAILED", "NO_MIC"])
@@ -82,7 +82,7 @@ def test_unavailable_audio_cannot_be_success(status):
     result = run(Turn(transcript="cat", input_status=status))
     assert result.decision.observation == Observation.UNAVAILABLE
     assert result.decision.answer_support == "UNKNOWN"
-    assert result.legacy_response()["responseQuality"] == "UNCLEAR"
+    assert result.advisory_response()["validatedLearning"] is False
 
 
 @pytest.mark.parametrize("context", [
@@ -102,7 +102,7 @@ def test_unprompted_match_is_only_unverified_and_requests_recall_when_due():
     result = run(Turn(transcript="cat", recall_due=True))
     assert result.decision.strategy == Strategy.RECALL
     assert result.decision.answer_support == "UNVERIFIED_INDEPENDENT"
-    assert not result.legacy_response()["activityComplete"]
+    assert not result.advisory_response()["validatedLearning"]
     no_recall = fixture_objective().model_copy(update={"recall_required": False})
     assert run(Turn(transcript="cat", recall_due=True), objective=no_recall).decision.strategy == Strategy.INDEPENDENT_CHECK
     assert run(Turn(transcript="cat", intent="RECALL", recall_due=False)).decision.strategy == Strategy.INDEPENDENT_CHECK
@@ -146,7 +146,7 @@ def test_unauthorized_unknown_version_and_grade_fail_closed():
     with pytest.raises(ObjectiveUnavailable):
         run(Turn(transcript="cat"), authorized=False)
     for key, grade in [(objective.key, 2), (("other", *objective.key[1:]), 1),
-                       ((*objective.key[:3], "old-version"), 1)]:
+                       ((*objective.key[:-1], "old-version"), 1)]:
         with pytest.raises(ObjectiveUnavailable):
             registry.resolve(key, grade=grade, authorized_keys=frozenset((key,)))
     with pytest.raises(ObjectiveUnavailable):
@@ -192,13 +192,91 @@ def test_stateless_turns_do_not_share_child_context():
     assert second.decision.answer_support == "UNVERIFIED_INDEPENDENT"
 
 
+@pytest.mark.parametrize("text", [
+    "The phrase 'your name' is used in introductions.",
+    "Say the words 'your name'.", "Read the word 'address'.",
+    "An address can appear on an envelope.", "A phone is used for calls.",
+    "We can address a puppet politely.", "We are studying the perfect tense.",
+])
+def test_legitimate_school_vocabulary_is_not_personal_data_collection(text):
+    card = Card(strategy=Strategy.EXPLAIN, language="en", variants=(text,),
+                question="What does this word mean?")
+    assert card.variants == (text,)
+
+
+def test_school_vocabulary_can_be_part_of_a_reviewed_objective():
+    data = fixture_objective().model_dump()
+    data["allowed_vocabulary"] += ("your name", "address", "phone")
+    assert "address" in Objective(**data).allowed_vocabulary
+
+
+@pytest.mark.parametrize("text", [
+    "What is your name?", "Say your name.", "Please tell me your home address.",
+    "Give me your phone number.", "Which school is your school?",
+    "What is your school name?", "Tell me your email address.",
+    "Please share your password.", "Where do you live?",
+    "तुम्हारा नाम क्या है?", "तुझे नाव काय आहे?", "अपना पता बताओ।",
+])
+def test_direct_private_data_requests_remain_blocked(text):
+    with pytest.raises(ValidationError):
+        Card(strategy=Strategy.ASK, language="en", variants=("Let us practise safely.",), question=text)
+
+
+def test_reviewed_fictional_name_dialogue_is_narrowly_scoped():
+    question = "Ask a fictional puppet, 'What is your name?'"
+    with pytest.raises(ValidationError):
+        Card(strategy=Strategy.ASK, language="en", variants=("Use only fictional names.",), question=question)
+    card = Card(strategy=Strategy.ASK, language="en", variants=("Use only fictional names.",),
+                question=question, fictional_names=True)
+    assert card.fictional_names
+    for question in ("Tell me your real name.", "Tell me your home address.",
+                     "A fictional game: tell your address then what is your name?",
+                     "Ask a fictional puppet, 'What is your name?' Tell me your phone number."):
+        with pytest.raises(ValidationError):
+            Card(strategy=Strategy.ASK, language="en", variants=("Use fictional names.",),
+                 question=question, fictional_names=True)
+
+
+def test_book_edition_and_track_are_part_of_authorization_and_evidence_scope():
+    a = fixture_objective()
+    b = a.model_copy(update={"curriculum": a.curriculum.model_copy(update={"book_id": "other-book", "track_id": "track-b"})})
+    c = a.model_copy(update={"curriculum": a.curriculum.model_copy(update={"edition": "next-edition"})})
+    registry = Registry((a, b, c), allow_synthetic=True)
+    assert len({a.key, b.key, c.key}) == 3
+    assert registry.resolve(a.key, grade=1, authorized_keys=frozenset((a.key,))) == a
+    for key in (b.key, c.key):
+        with pytest.raises(ObjectiveUnavailable):
+            registry.resolve(key, grade=1, authorized_keys=frozenset((a.key,)))
+    with pytest.raises(ValidationError):
+        CurriculumRef(namespace="synthetic", book_id=" ", edition="test", track_id="track")
+
+
+def test_unreviewed_non_synthetic_records_cannot_enter_registry():
+    candidate = fixture_objective().model_copy(update={"synthetic": False})
+    with pytest.raises(ObjectiveUnavailable):
+        Registry((candidate,))
+
+
+@pytest.mark.parametrize("status", ["SILENCE", "STT_FAILED", "NO_MIC"])
+def test_even_exact_matches_with_missing_speech_never_claim_learning(status):
+    result = run(Turn(transcript="cat", input_status=status)).advisory_response()
+    assert result["validatedLearning"] is False
+    assert result["lexicalObservation"] == "UNAVAILABLE"
+    assert "responseQuality" not in result
+
+
 def model_result(content, status=200):
     return httpx.Response(status, json={"message": {"content": content}})
 
 
 def with_model(handler, turn=None, timeout=0.2):
+    async def transport(request):
+        if request.url.path == "/api/ps":
+            return httpx.Response(200, json={"models": [{"name": "qwen3:4b-instruct"}]})
+        result = handler(request)
+        return await result if hasattr(result, "__await__") else result
     async def invoke():
-        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
             objective = fixture_objective()
             brain = TeachingBrain(Registry((objective,), allow_synthetic=True),
                                   selector=QwenWordingSelector(client=client, timeout=timeout))
@@ -296,14 +374,47 @@ def test_cancellation_is_propagated_and_not_represented_as_success():
     asyncio.run(invoke())
 
 
-def test_legacy_shape_is_unchanged_and_no_route_is_enabled():
+@pytest.mark.parametrize("models", [[], [{"name": "other-model"}], None])
+def test_cold_or_unknown_model_is_not_loaded_during_a_child_turn(models):
+    async def invoke():
+        paths = []
+        def handler(request):
+            paths.append(request.url.path)
+            assert request.method == "GET"
+            return httpx.Response(200, json={"models": models})
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            objective = fixture_objective()
+            selected = await QwenWordingSelector(client=client).select(
+                grade=1, decision=decide(objective, Turn(transcript="dog")), card=objective.cards[0])
+            assert selected is None
+            assert paths == ["/api/ps"]
+    asyncio.run(invoke())
+
+
+def test_preflight_failure_is_safe_and_deadline_covers_preflight():
+    async def invoke():
+        async def slow(_):
+            await asyncio.sleep(.2)
+            return httpx.Response(200, json={"models": []})
+        async with httpx.AsyncClient(transport=httpx.MockTransport(slow)) as client:
+            objective = fixture_objective()
+            selector = QwenWordingSelector(client=client, timeout=.01)
+            assert await selector.select(grade=1, decision=decide(objective, Turn()), card=objective.cards[0]) is None
+        with pytest.raises(ValueError):
+            QwenWordingSelector(timeout=6)
+    asyncio.run(invoke())
+
+
+def test_advisory_cannot_serialize_as_legacy_success_and_no_route_is_enabled():
     from fastapi.testclient import TestClient
     from server.main import app
     from server.compat import BrainRequest
-    response = run(Turn(transcript="cat")).legacy_response()
-    assert set(response) == {"message", "reaction", "responseQuality", "followUpQuestion", "correction",
-                             "memoryUpdates", "recommendedAction", "teachingAction", "modelSentence",
-                             "activityComplete", "shouldRetry", "hintLevel", "detectedSkills", "remainingSkills"}
+    result = run(Turn(transcript="cat"))
+    response = result.advisory_response()
+    assert response["lexicalObservation"] == "LEXICAL_MATCH"
+    assert response["validatedLearning"] is False
+    assert not hasattr(result, "legacy_response")
+    assert not {"responseQuality", "evaluation", "activityComplete", "detectedSkills", "mastery", "score"} & response.keys()
     assert "teaching" not in BrainRequest.model_fields
     client = TestClient(app)
     assert client.get("/health").status_code == 200
