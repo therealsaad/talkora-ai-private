@@ -1,4 +1,4 @@
-"""Opt-in pilot bridge for existing Node PythonAIProvider contract.
+"""Authenticated opt-in local Qwen bridge for KG1–5 and Class 1 Level 1.
 No other grade or lesson is enabled. No student data is persisted here.
 """
 import json
@@ -15,6 +15,41 @@ from .bridge_security import require_bridge_key
 router = APIRouter()
 PILOT = json.loads((Path(__file__).resolve().parents[1] / 'phase3/kg1.json').read_text(encoding='utf-8'))
 EMOTIONS = {'welcome', 'encouraging', 'delighted', 'thinking', 'celebrating', 'gentle_correction', 'modeling', 'retry'}
+
+# Exact KG2–5 approved *pilot* letter-to-picture context, not student publication.
+# KG2 currently has letters only; KG5 words follow the Node student catalog,
+# not the older, mismatched staff preview (wolf/yak rather than whale/yo-yo).
+KG_LETTER_WORDS = {
+    'g00-l02': dict.fromkeys('EFGHIJ', ''),
+    'g00-l03': dict(zip('KLMNOP', ('kite', 'lion', 'monkey', 'nest', 'orange', 'parrot'))),
+    'g00-l04': dict(zip('QRSTUV', ('queen', 'rabbit', 'sun', 'tiger', 'umbrella', 'van'))),
+    'g00-l05': dict(zip('WXYZ', ('wolf', 'xylophone', 'yak', 'zebra'))),
+}
+
+def continuation_context(req: 'BrainRequest') -> dict[str, Any]:
+    """Allow only one current letter and its known story word from Node."""
+    import re
+    if req.grade != 0 or req.levelId not in KG_LETTER_WORDS:
+        raise HTTPException(422, 'Unsupported KG lesson')
+    if os.getenv('TALKORA_KG2_5_QWEN_PILOT', '').strip().lower() != 'true':
+        raise HTTPException(403, 'KG continuation AI pilot disabled')
+    match = re.fullmatch(r'\s*Say the letter ([A-Z])\s*', req.currentQuestion, re.IGNORECASE)
+    letter = match.group(1).upper() if match else ''
+    word = KG_LETTER_WORDS[req.levelId].get(letter)
+    if word is None:
+        raise HTTPException(422, 'Requested KG letter is not in the current approved pilot')
+    expected = {letter.lower()}
+    if word:
+        expected.add(word)
+    supplied = {entry.lower().strip() for entry in req.allowedVocabulary}
+    if supplied != expected:
+        raise HTTPException(422, 'Unapproved KG word or letter context')
+    if req.studentName != 'Learner' or req.conversationHistory or req.recentMistakes:
+        raise HTTPException(422, 'Unexpected personal or historic KG context')
+    return {'levelId': req.levelId, 'levelObjective': 'say the English letter',
+            'currentLetter': letter, 'pictureWord': word,
+            'allowedVocabulary': sorted(expected)}
+
 
 class BrainRequest(BaseModel):
     model_config = ConfigDict(extra='allow')
@@ -43,9 +78,14 @@ async def brain_respond(req: BrainRequest) -> dict[str, Any]:
         from .class1_response_guard import guard_class1_response
         return guard_class1_response(await respond_class1(req), req)
 
-    # Deliberately fail closed: never silently route Class 4 or another KG level into KG1.
-    if req.grade != 0 or req.levelId != 'g00-l01':
-        raise HTTPException(422, 'Only explicit KG Level 1 pilot is authored; no grade fallback')
+    # Route only the explicit KG2–5 letter pilots, never draft KG6–10.
+    # This bridge can compose language, but Node remains sole grading authority.
+    if req.grade == 0 and req.levelId in KG_LETTER_WORDS:
+        lesson = continuation_context(req)
+    elif req.grade == 0 and req.levelId == 'g00-l01':
+        lesson = PILOT
+    else:
+        raise HTTPException(422, 'Only explicit KG Level 1–5 pilots are authored; no grade fallback')
     language = {'hindi':'hi','marathi':'mr','english':'en','hi':'hi','mr':'mr','en':'en'}.get(req.preferredExplanationLanguage.lower())
     if language is None:
         raise HTTPException(422, 'Unsupported explanation language')
@@ -53,6 +93,9 @@ async def brain_respond(req: BrainRequest) -> dict[str, Any]:
         'You are Miss Julie, a kind spoken-English teacher for KG children. '
         'The child may respond with a single word. Do not claim a correct answer unless it is supported by the student utterance. '
         'Stay strictly within the supplied lesson, activity and teacher question. '
+        'For continuation KG2–5, ONLY answer the child briefly and then ask the current English LETTER. '
+        'Do not imply that recognizing a picture word completes the letter task. '
+        'Never ask for private details or provide unsafe unrelated instructions. '
         'Respond in simple spoken English; a brief support-language hint may be included if needed. '
         'Never emit metadata like hi: or mr: in spoken text. Do not ask for identifying information. '
         'Return one JSON object containing: message, reaction, responseQuality, followUpQuestion, '
@@ -64,7 +107,7 @@ async def brain_respond(req: BrainRequest) -> dict[str, Any]:
         'CELEBRATE_IMPROVEMENT, ASK_FOLLOW_UP, GIVE_HINT or CLARIFY. '
         'Never mark activityComplete true; the Node backend owns mastery and completion. '
         'Use no memoryUpdates; the Node backend owns memory verification.\n'
-        + json.dumps({'lesson':PILOT,'language':language,'currentQuestion':req.currentQuestion,
+        + json.dumps({'lesson':lesson,'language':language,'currentQuestion':req.currentQuestion,
                       'activityTitle':req.activityTitle,'objectives':req.learningObjectives,
                       'allowedVocabulary':req.allowedVocabulary,'recentMistakes':req.recentMistakes[-5:],
                       'history':req.conversationHistory[-6:],'waitingForRetry':req.waitingForRetry,
