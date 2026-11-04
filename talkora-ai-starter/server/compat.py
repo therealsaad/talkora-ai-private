@@ -31,8 +31,6 @@ def continuation_context(req: 'BrainRequest') -> dict[str, Any]:
     import re
     if req.grade != 0 or req.levelId not in KG_LETTER_WORDS:
         raise HTTPException(422, 'Unsupported KG lesson')
-    if os.getenv('TALKORA_KG2_5_QWEN_PILOT', '').strip().lower() != 'true':
-        raise HTTPException(403, 'KG continuation AI pilot disabled')
     match = re.fullmatch(r'\s*Say the letter ([A-Z])\s*', req.currentQuestion, re.IGNORECASE)
     letter = match.group(1).upper() if match else ''
     word = KG_LETTER_WORDS[req.levelId].get(letter)
@@ -46,6 +44,8 @@ def continuation_context(req: 'BrainRequest') -> dict[str, Any]:
         raise HTTPException(422, 'Unapproved KG word or letter context')
     if req.studentName != 'Learner' or req.conversationHistory or req.recentMistakes:
         raise HTTPException(422, 'Unexpected personal or historic KG context')
+    if os.getenv('TALKORA_KG2_5_QWEN_PILOT', '').strip().lower() != 'true':
+        raise HTTPException(403, 'KG continuation AI pilot disabled')
     return {'levelId': req.levelId, 'levelObjective': 'say the English letter',
             'currentLetter': letter, 'pictureWord': word,
             'allowedVocabulary': sorted(expected)}
