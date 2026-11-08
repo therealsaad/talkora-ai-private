@@ -80,6 +80,29 @@ def scene_for_title(title: str):
     return None
 
 
+
+# Qwen is for genuinely open child questions. Repeats, hesitations, recognised
+# help requests and standard First Day answers have an approved, low-latency
+# reply in first_day_voice_reply. Retain the separate poem-rehearsal behavior.
+def should_consult_first_day_qwen(title: str, transcript: str) -> bool:
+    if scene_for_title(title) is None:
+        return False
+    if any(marker.lower() in (title or '').lower() for marker in POEM_SCENES):
+        return True  # Unpublished poem rehearsal remains on its existing path.
+    said = (transcript or '')[:240].casefold().strip()
+    if not said:
+        return False
+    # Short requests already have a reviewed bilingual model in EXPLANATIONS.
+    if re.search(r"don't know|do not know|not understand|help|repeat|again|"
+                 r"what does .{1,50} mean|meaning of|"
+                 r"मला समजत नाही|मुझे समझ नहीं|मदद|फिर से|पुन्हा|"
+                 r"हिंदी में समझाओ|मराठीत समजाव", said):
+        return False
+    return bool(re.search(r"^\s*(?:why|how|what|where|when|who|tell me about)\b", said)
+                or '?' in said or 'क्यों' in said or 'कसा' in said
+                or 'कशी' in said or 'कसे' in said or 'का ' in said
+                or 'काय ' in said or 'कशासाठी' in said)
+
 def first_day_voice_reply(language: str, title: str, question: str, transcript: str, hint_level: int) -> dict | None:
     scene = scene_for_title(title)
     if scene is None:
@@ -113,12 +136,20 @@ def first_day_voice_reply(language: str, title: str, question: str, transcript: 
                   or re.search(r'नहीं|समजत|कळत|नाही|मदद', speech))
     idx = {'en': 0, 'hi': 1, 'mr': 2}[language]
     explanation = EXPLANATIONS[target][idx]
+    # Respond to a volunteered home-language word without treating it as
+    # independent English evidence or redirecting to an unrelated chapter.
+    volunteered_cat = bool(re.search(r'\b(?:billi|manjar|maanjar)\b|बिल्ली|मांजर|मांजरी', speech))
+    cat_bridge = {
+        'en': 'Billi or manjar means cat in English.',
+        'hi': 'बिल्ली को अंग्रेज़ी में cat कहते हैं।',
+        'mr': 'मांजरला इंग्रजीत cat म्हणतात.',
+    }[language] if volunteered_cat else ''
     # Questions must not be mistaken for independent use of the target.
     # One clear target word on its own still counts when it is a statement.
     if '?' in speech or re.search(r'\b(repeat|again|no idea|what does|don.?t know)\b', speech):
         asks = True
     if asks or unsure:
-        message = explanation
+        message = (cat_bridge + ' ' + explanation).strip() if cat_bridge else explanation
         follow = {'en': f'Now try with me: {model}', 'hi': f'अब मेरे साथ बोलो: {model}',
                   'mr': f'आता माझ्यासोबत म्हण: {model}'}[language]
         if poem_mode and hint_level >= 1:
@@ -140,6 +171,8 @@ def first_day_voice_reply(language: str, title: str, question: str, transcript: 
         'hi': f'चलो मजेदार स्कूल खेल खेलते हैं: {model}',
         'mr': f'चला मजेशीर शाळेचा खेळ खेळूया: {model}',
     }[language]
+    if cat_bridge:
+        message = cat_bridge + ' ' + explanation
     follow = {'en': f'Can you try: {model}', 'hi': f'अंग्रेज़ी में कहो: {model}',
               'mr': f'इंग्रजीत म्हण: {model}'}[language]
     if poem_mode and hint_level >= 1:
@@ -212,7 +245,8 @@ async def first_day_qwen_coach(language: str, title: str, question: str,
                             if isinstance(item, str)],
     }, ensure_ascii=False)
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        # A cold GPU must never hold the child's microphone turn for ten seconds.
+        async with httpx.AsyncClient(timeout=1.8) as client:
             reply = await client.post(address + '/api/chat', json={
                 'model': os.getenv('OLLAMA_MODEL', 'qwen3:4b-instruct'),
                 'stream': False, 'format': 'json',
