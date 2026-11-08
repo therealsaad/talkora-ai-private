@@ -61,10 +61,15 @@ fine-tuned.
    `responseQuality` / `shouldRetry` retain their current meanings.
 2. School-talk prompt: ensure the AI discusses school, not other chapters.
 3. Check Hindi/Marathi support for difficult attempts.
-4. Check unavailable Ollama and slow response handling; repeat activities
-   must still work. A cold guided reply may still take up to 12 seconds.
+4. Check unavailable Ollama and slow response handling. Routine ten-scene First Day v3 turns use reviewed English/Hindi/Marathi guidance immediately; only novel questions have a 1.8-second local Qwen budget before a syllabus-bound fallback. The separate poem rehearsal retains its previous strict Qwen contract.
 5. Check the authenticated student browser session, STT, S3 Priya audio,
    homework, and MongoDB progress end to end before publishing the draft.
 
 Do not upload raw child speech or personally identifying information into the
 training set. The teaching engine must not infer IQ from response times.
+
+## First Day v3 voice-turn latency policy — 8 November 2026
+
+For the ten-scene First Day v3, regular correct/wrong/hesitant speech, familiar `What does ... mean?` questions and language-help requests take a fast scene-specific English/Hindi/Marathi teaching path without contacting the GPU. A novel child question may query local Qwen with a **1.8-second deadline**; if inference is unavailable or rejected, Miss Julie supplies the existing checked explanation and original English practice sentence. The authenticated Node curriculum/attempt/receipt engine remains the only authority for mastery, progress and unlocking; the Python brain always sets `activityComplete: false`. This change does not deploy, train, validate real speaker output or authorize the separate v4 poem rehearsal.
+
+Run `python -m pytest -q tests/test_class1_first_day.py` for deterministic multilingual examples, Qwen-only question routing and offline recovery. Real device mouth-to-speaker p50/p95 and native-speaker review are still release requirements.
