@@ -16,7 +16,7 @@ from .class1_adaptive import (CONTEXT_WORDS, FOUNDATION_WORDS, SYSTEM_INSTRUCTIO
                               is_simple_repeat, select_teaching_plan)
 from .class1_hint_gate import validate_model_hint
 from .class1_language import resolve_support_language
-from .class1_first_day import first_day_voice_reply, first_day_qwen_coach
+from .class1_first_day import first_day_voice_reply, first_day_qwen_coach, should_consult_first_day_qwen
 
 LESSON = json.loads((Path(__file__).resolve().parents[1] / 'phase3/class1.json').read_text(encoding='utf-8'))
 WORDS = set(LESSON['approved_foundation_words'])
@@ -311,15 +311,23 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         req.studentMessage, int(req.hintLevel or 0),
     )
     if first_day is not None:
-        # The 8002 brain must truly reason about every spoken First Day turn.
-        # Deterministic pedagogy controls grading, retries and allowed models;
-        # local Qwen supplies a contextual explanation. A stopped model fails
-        # visibly rather than replaying another generic recorded response.
-        first_day['message'] = await first_day_qwen_coach(
-            lang, req.activityTitle, req.currentQuestion,
-            req.studentMessage, int(req.hintLevel or 0), first_day,
-            history=req.conversationHistory,
-        )
+        # Normal First Day turns are taught immediately using the reviewed,
+        # scene-specific English/Hindi/Marathi scaffold. A genuinely new
+        # question may get 1.8s of local Qwen wording, but model failure
+        # never fabricates mastery, a new scene or a fake teacher evaluation.
+        # The original baseline is an explicit safe curriculum response,
+        # not an AI-generated transcript or claim that Qwen replied.
+        if should_consult_first_day_qwen(req.activityTitle, req.studentMessage):
+            try:
+                first_day['message'] = await first_day_qwen_coach(
+                    lang, req.activityTitle, req.currentQuestion,
+                    req.studentMessage, int(req.hintLevel or 0), first_day,
+                    history=req.conversationHistory,
+                )
+            except HTTPException as exc:
+                if exc.status_code not in (502, 503):
+                    raise
+                # The validated First Day teaching decision remains intact.
         return {
             'message': first_day['message'][:330],
             'reaction': 'modeling' if first_day['retry'] else 'encouraging',
