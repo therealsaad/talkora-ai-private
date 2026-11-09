@@ -43,6 +43,17 @@ def guard_class1_response(result: dict[str, Any], req: Any) -> dict[str, Any]:
         message = re.sub(r'(?<=[.!?])(?=[A-Za-z])', ' ', message.strip())
         message = re.sub(r'[ \t]+', ' ', message)
         response['message'] = message
+    # Scene key is Node-authoritative. Even if a stale currentQuestion says
+    # 'Say the word at', NEVER apply the old foundation repeat guard to a
+    # poem; that was the exact teaching mismatch visible in the classroom.
+    poem_scene = str(getattr(req, 'sceneKey', '') or '').startswith('poem-') or \
+        str(getattr(req, 'activityTitle', '') or '').lower().startswith('poem ')
+    if poem_scene:
+        response['activityComplete'] = False
+        response['memoryUpdates'] = []
+        response['detectedSkills'] = []
+        response['remainingSkills'] = []
+        return response
     target = _target(req)
     if _repeat_mode(req) and target:
         # A learner asked to repeat one short word should not suddenly be
