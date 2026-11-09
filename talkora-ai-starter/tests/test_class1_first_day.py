@@ -26,41 +26,116 @@ def test_unrelated_activity_is_not_hijacked():
     assert first_day_voice_reply('en', 'Listen am', '', 'am', 0) is None
 
 
-def test_v3_first_day_uses_contextual_qwen_for_every_reply(monkeypatch):
+def test_v3_first_day_uses_qwen_only_for_novel_child_questions(monkeypatch):
     import asyncio
     import server.class1 as class1
     from server.compat import BrainRequest
     calls = []
+
     async def fake_model(language, title, question, transcript, hint_level, decision, history=None):
         calls.append((title, transcript, decision['retry']))
-        return f'I heard {transcript}. Let us learn skip with your hopping fingers!'
+        return 'Bunnies hop happily at school. Our new word is skip.'
+
     monkeypatch.setattr(class1, 'first_day_qwen_coach', fake_model)
+    question = 'Why do bunnies skip?'
     request = BrainRequest(grade=1, levelId='g01-l01', activityTitle='Skip like a bunny',
-                           currentQuestion='Say I can skip.', studentMessage='jump',
+                           currentQuestion='Say I can skip.', studentMessage=question,
                            preferredExplanationLanguage='English')
     answer = asyncio.run(class1.respond_class1(request))
-    assert answer['message'].startswith('I heard jump.')
-    assert calls == [('Skip like a bunny', 'jump', True)]
+    assert 'Bunnies hop happily' in answer['message']
+    assert calls == [('Skip like a bunny', question, True)]
     assert answer['modelSentence'] == 'I can skip.'
     assert answer['shouldRetry'] is True
     assert answer['activityComplete'] is False
 
 
-def test_v3_missing_local_qwen_is_not_silently_replaced_by_script(monkeypatch):
+def test_v3_routine_English_Hindi_Marathi_turns_do_not_wait_for_qwen(monkeypatch):
+    import asyncio
+    import server.class1 as class1
+    from server.compat import BrainRequest
+
+    async def must_not_call(*args, **kwargs):
+        raise AssertionError('Routine scene feedback must not contact Qwen')
+
+    monkeypatch.setattr(class1, 'first_day_qwen_coach', must_not_call)
+    for spoken, language in [('skip', 'English'), ('मला समजत नाही', 'Marathi'),
+                             ('बिल्ली', 'Hindi'), ('मांजर', 'Marathi')]:
+        req = BrainRequest(grade=1, levelId='g01-l01',
+                           activityTitle='Skip like a bunny',
+                           currentQuestion='Say I can skip.', studentMessage=spoken,
+                           preferredExplanationLanguage=language)
+        result = asyncio.run(class1.respond_class1(req))
+        assert result['activityComplete'] is False
+        assert result['memoryUpdates'] == []
+        assert result['modelSentence'] == 'I can skip.'
+        assert 'I can skip.' in result['followUpQuestion']
+
+
+def test_v3_open_question_when_qwen_is_offline_uses_safe_reviewed_fallback(monkeypatch):
     import asyncio
     import server.class1 as class1
     from fastapi import HTTPException
     from server.compat import BrainRequest
+
     async def failed_model(*args, **kwargs):
         raise HTTPException(503, 'CLASS1_LOCAL_QWEN_UNAVAILABLE')
-    monkeypatch.setattr(class1, 'first_day_qwen_coach', failed_model)
-    request = BrainRequest(grade=1, levelId='g01-l01', activityTitle='Skip like a bunny',
-                           currentQuestion='Say I can skip.', studentMessage='skip')
-    import pytest
-    with pytest.raises(HTTPException) as caught:
-        asyncio.run(class1.respond_class1(request))
-    assert caught.value.status_code == 503
 
+    monkeypatch.setattr(class1, 'first_day_qwen_coach', failed_model)
+    req = BrainRequest(grade=1, levelId='g01-l01',
+                       activityTitle='Skip like a bunny',
+                       currentQuestion='Say I can skip.',
+                       studentMessage='Why do bunnies skip?',
+                       preferredExplanationLanguage='English')
+    result = asyncio.run(class1.respond_class1(req))
+    assert result['responseQuality'] == 'UNCLEAR'
+    assert result['shouldRetry'] is True
+    assert result['modelSentence'] == 'I can skip.'
+    assert 'Skipping is' in result['message']
+    assert result['activityComplete'] is False
+    assert result['detectedSkills'] == []
+
+
+def test_v3_open_question_with_bad_qwen_output_uses_safe_reviewed_fallback(monkeypatch):
+    import asyncio
+    import server.class1 as class1
+    from fastapi import HTTPException
+    from server.compat import BrainRequest
+
+    async def failed_model(*args, **kwargs):
+        raise HTTPException(502, 'CLASS1_QWEN_COACHING_REJECTED')
+
+    monkeypatch.setattr(class1, 'first_day_qwen_coach', failed_model)
+    req = BrainRequest(grade=1, levelId='g01-l01',
+                       activityTitle='School gate: Hello, Grade One!',
+                       currentQuestion='Tell me about school.',
+                       studentMessage='Why do we go to school?',
+                       preferredExplanationLanguage='Marathi')
+    result = asyncio.run(class1.respond_class1(req))
+    assert 'शाळेत आपण' in result['message']
+    assert result['modelSentence'] == 'I am happy at school.'
+    assert result['activityComplete'] is False
+
+
+def test_volunteered_billi_or_manjar_is_translated_without_granting_English_mastery():
+    from server.class1_first_day import first_day_voice_reply
+    for spoken, language in [('billi', 'hi'), ('बिल्ली', 'hi'),
+                             ('मांजर', 'mr'), ('manjar', 'mr')]:
+        reply = first_day_voice_reply(language, 'Skip like a bunny', '', spoken, 0)
+        assert 'cat' in reply['message']
+        assert 'skip' in reply['follow']
+        assert reply['retry'] is True
+        assert reply['quality'] == 'PARTIAL'
+
+
+def test_teacher_prefers_fast_policy_for_previously_explained_help_questions():
+    from server.class1_first_day import should_consult_first_day_qwen
+    title = 'Skip like a bunny'
+    for spoken in ('skip', 'I can skip.', 'What does skip mean?',
+                   'मला समजत नाही', 'help please', 'repeat again', 'बिल्ली'):
+        assert should_consult_first_day_qwen(title, spoken) is False, spoken
+    for spoken in ('Why do bunnies skip?', 'How can I skip?', 'क्यों बच्चे कूदते हैं?'):
+        assert should_consult_first_day_qwen(title, spoken) is True, spoken
+    assert should_consult_first_day_qwen('unapproved Class 6 scene', 'why?') is False
 
 def test_local_qwen_turn_reads_actual_child_answer_and_rejects_fake_mastery(monkeypatch):
     import asyncio
@@ -123,7 +198,7 @@ def test_v3_brain_endpoint_reaches_adaptive_coach_without_touching_legacy(monkey
         'activityTitle': 'Skip like a bunny',
         'digitalType': 'FIRST_DAY_VOICE_SCENE',
         'currentQuestion': 'Say in English what you can do. I can skip.',
-        'studentMessage': 'jump',
+        'studentMessage': 'Why do bunnies skip?',
         'preferredExplanationLanguage': 'English',
     })
     assert answer.status_code == 200, answer.text
@@ -132,7 +207,7 @@ def test_v3_brain_endpoint_reaches_adaptive_coach_without_touching_legacy(monkey
     assert result['modelSentence'] == 'I can skip.'
     assert result['shouldRetry'] is True
     assert result['activityComplete'] is False
-    assert calls == [('en', 'Skip like a bunny', 'jump', True)]
+    assert calls == [('en', 'Skip like a bunny', 'Why do bunnies skip?', True)]
 
 def test_first_day_variations_match_node_evidence_without_false_praise():
     from server.class1_first_day import first_day_voice_reply
