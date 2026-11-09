@@ -356,8 +356,8 @@ def test_poem_marathi_hindi_support_stays_on_both_english_lines_without_qwen(mon
         raise AssertionError('Known help requests must use the reviewed fast path')
     monkeypatch.setattr(module, 'first_day_qwen_coach', no_qwen)
     for student, preference, native_phrase in [
-        ('मला समजत नाही', 'Marathi', 'छान'),
-        ('हिंदी में समझाओ', 'Hindi', 'घंटी'),
+        ('मला समजत नाही', 'Marathi', 'हसू'),
+        ('हिंदी में समझाओ', 'Hindi', 'मुस्कान'),
     ]:
         req = BrainRequest(
             grade=1, levelId='g01-l01', sceneKey='poem-pair-3',
