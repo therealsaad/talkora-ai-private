@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
 from .bridge_security import require_bridge_key
+from .lesson_teaching import LessonTeachingContext, current_teaching_context
 
 router = APIRouter()
 PILOT = json.loads((Path(__file__).resolve().parents[1] / 'phase3/kg1.json').read_text(encoding='utf-8'))
@@ -68,9 +69,11 @@ class BrainRequest(BaseModel):
     conversationHistory: list[str] = Field(default_factory=list)
     waitingForRetry: bool = False
     hintLevel: int = 0
+    teachingContext: LessonTeachingContext | None = None
 
 @router.post('/v1/brain/respond', dependencies=[Depends(require_bridge_key)])
 async def brain_respond(req: BrainRequest) -> dict[str, Any]:
+    current_teaching_context(req)
     # Class 1 is opt-in and anchored to the authorized canonical level ID.
     # Do not change the existing KG handler or teach any other class here.
     if req.grade == 1 and req.levelId == 'g01-l01':

@@ -43,6 +43,16 @@ def guard_class1_response(result: dict[str, Any], req: Any) -> dict[str, Any]:
         message = re.sub(r'(?<=[.!?])(?=[A-Za-z])', ' ', message.strip())
         message = re.sub(r'[ \t]+', ' ', message)
         response['message'] = message
+    if getattr(req, 'teachingContext', None) is not None:
+        from .lesson_teaching import current_teaching_context
+        current_teaching_context(req)
+        # A validated curriculum model takes precedence over the old tiny-word
+        # prompt parser for both school-action and poem scenes.
+        response['activityComplete'] = False
+        response['memoryUpdates'] = []
+        response['detectedSkills'] = []
+        response['remainingSkills'] = []
+        return response
     # Scene key is Node-authoritative. Even if a stale currentQuestion says
     # 'Say the word at', NEVER apply the old foundation repeat guard to a
     # poem; that was the exact teaching mismatch visible in the classroom.

@@ -1,0 +1,42 @@
+{
+  "studentName": "Learner",
+  "grade": 1,
+  "levelId": "g01-l01",
+  "sceneKey": "poem-pair-3",
+  "activityTitle": "Poem lines 5–6: grin and bell",
+  "currentQuestion": "Listen to both lines: See me grin. When the bell rings, I go in.",
+  "studentMessage": "At at.",
+  "preferredExplanationLanguage": "English",
+  "allowedVocabulary": ["see", "grin", "bell", "rings"],
+  "conversationHistory": [],
+  "recentMistakes": [],
+  "hintLevel": 0,
+  "waitingForRetry": false,
+  "teachingContext": {
+    "version": 1,
+    "grade": 1,
+    "lessonKey": "g01-l01",
+    "sceneKey": "poem-pair-3",
+    "activityKey": "class1-l01-v4-poem-pair-3",
+    "revision": "class1-first-day-poem-v4",
+    "mode": "RECITE",
+    "learnerBand": "EARLY_PRIMARY",
+    "focus": "smile",
+    "source": {
+      "reference": "https://ebooks.ebalbharati.in/pdfs/103050001.pdf",
+      "label": "English Balbharati (2025), Unit 1, 1.1 My First Day",
+      "book": "English Balbharati Grade One",
+      "edition": "2025",
+      "chapter": "1.1",
+      "pageStart": 1,
+      "pageEnd": 1
+    },
+    "objective": "Listen to and recite the current English poem lines in order.",
+    "teacherQuestion": "Listen to both lines: See me grin. When the bell rings, I go in.",
+    "lineIds": ["g01-l01:poem-pair-3:line-5", "g01-l01:poem-pair-3:line-6"],
+    "modelLines": ["See me grin", "When the bell rings, I go in."],
+    "vocabulary": ["see", "grin", "bell", "rings"],
+    "hints": { "en": null, "hi": "Grin यानी मुस्कान, bell यानी घंटी।", "mr": "Grin म्हणजे हसू, bell म्हणजे घंटा." },
+    "support": { "mode": "MODEL", "hintLevel": 0, "reason": "FIRST_ATTEMPT", "recentAttempts": 0 }
+  }
+}

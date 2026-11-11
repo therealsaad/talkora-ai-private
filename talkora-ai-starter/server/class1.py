@@ -17,6 +17,7 @@ from .class1_adaptive import (CONTEXT_WORDS, FOUNDATION_WORDS, SYSTEM_INSTRUCTIO
 from .class1_hint_gate import validate_model_hint
 from .class1_language import resolve_support_language
 from .class1_first_day import first_day_voice_reply, first_day_qwen_coach, should_consult_first_day_qwen
+from .lesson_teaching import current_teaching_context
 
 LESSON = json.loads((Path(__file__).resolve().parents[1] / 'phase3/class1.json').read_text(encoding='utf-8'))
 WORDS = set(LESSON['approved_foundation_words'])
@@ -309,9 +310,11 @@ async def respond_class1(req: Any) -> dict[str, Any]:
     # Node resolves sceneKey from its authorized MongoDB Activity. Never let a
     # display title or old pronunciation target route a poem child to 'at'.
     scene_key = str(getattr(req, 'sceneKey', '') or '')
+    teaching_context = current_teaching_context(req)
+    context_args = {'teaching_context': teaching_context} if teaching_context else {}
     first_day = first_day_voice_reply(
         lang, req.activityTitle, req.currentQuestion,
-        req.studentMessage, int(req.hintLevel or 0), scene_key=scene_key,
+        req.studentMessage, int(req.hintLevel or 0), scene_key=scene_key, **context_args,
     )
     if first_day is not None:
         # Normal First Day turns are taught immediately using the reviewed,
@@ -320,13 +323,14 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         # never fabricates mastery, a new scene or a fake teacher evaluation.
         # The original baseline is an explicit safe curriculum response,
         # not an AI-generated transcript or claim that Qwen replied.
-        if should_consult_first_day_qwen(req.activityTitle, req.studentMessage, scene_key=scene_key):
+        if should_consult_first_day_qwen(req.activityTitle, req.studentMessage, scene_key=scene_key, **context_args):
             try:
                 first_day['message'] = await first_day_qwen_coach(
                     lang, req.activityTitle, req.currentQuestion,
                     req.studentMessage, int(req.hintLevel or 0), first_day,
                     history=req.conversationHistory,
                     **({'scene_key': scene_key} if scene_key else {}),
+                    **context_args,
                 )
             except HTTPException as exc:
                 if exc.status_code not in (502, 503):
