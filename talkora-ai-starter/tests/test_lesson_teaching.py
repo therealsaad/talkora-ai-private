@@ -194,6 +194,8 @@ def test_novel_questions_use_the_compact_db_context_and_a_bounded_local_model(mo
     policy = observed['body']['messages'][0]['content']
     assert 'exact approved English lines' in policy
     assert 'Never quote the textbook poem' not in policy
+    assert 'all supplied approved_lines' in policy
+    assert 'TWO actual lines' not in policy  # The same contract also supports the ten-line finale.
     assert answer['activityComplete'] is False
     assert answer['memoryUpdates'] == []
 
