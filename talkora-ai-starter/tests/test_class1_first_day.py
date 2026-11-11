@@ -306,3 +306,108 @@ def test_poem_retry_repeats_same_two_lines_when_child_needs_help():
     assert decision['follow'].count('See me skip') == 2
     assert decision['follow'].count('See me run') == 2
     assert 'skip' in decision['model']
+
+
+def test_recording_regression_poem_pair_three_never_becomes_at_word_drill(monkeypatch):
+    """Video 2026-11-09: highlighted grin/bell but Miss Julie said 'say at'."""
+    import asyncio
+    from server.compat import BrainRequest
+    from server.class1 import respond_class1
+    from server.class1_response_guard import guard_class1_response
+    import server.class1 as module
+
+    async def no_qwen_for_routine(*args, **kwargs):
+        raise AssertionError('A simple pair repeat must not wait for Ollama')
+
+    monkeypatch.setattr(module, 'first_day_qwen_coach', no_qwen_for_routine)
+    req = BrainRequest(
+        grade=1, levelId='g01-l01',
+        sceneKey='poem-pair-3', activityTitle='STALE UNRELATED TITLE',
+        currentQuestion='Say the word at.',
+        studentMessage='At at.', preferredExplanationLanguage='English',
+    )
+    result = guard_class1_response(asyncio.run(respond_class1(req)), req)
+    assert result['responseQuality'] == 'PARTIAL'
+    assert result['shouldRetry'] is True
+    assert result['modelSentence'] == 'See me grin. When the bell rings, I go in.'
+    assert 'grin' in result['message'].lower()
+    assert 'bell' in result['followUpQuestion'].lower()
+    assert 'can you say at' not in str(result).lower()
+    assert result['activityComplete'] is False
+    assert result['memoryUpdates'] == []
+
+    # A genuine two-line attempt is recognized without the legacy short-word
+    # guard rewriting it to 'at' simply because the old prompt is stale.
+    req.studentMessage = 'See me grin. When the bell rings, I go in.'
+    complete = guard_class1_response(asyncio.run(respond_class1(req)), req)
+    assert complete['responseQuality'] == 'ADEQUATE'
+    assert complete['shouldRetry'] is False
+    assert complete['activityComplete'] is False  # Node is sole authority
+
+
+def test_poem_marathi_hindi_support_stays_on_both_english_lines_without_qwen(monkeypatch):
+    import asyncio
+    from server.compat import BrainRequest
+    from server.class1 import respond_class1
+    from server.class1_response_guard import guard_class1_response
+    import server.class1 as module
+
+    async def no_qwen(*args, **kwargs):
+        raise AssertionError('Known help requests must use the reviewed fast path')
+    monkeypatch.setattr(module, 'first_day_qwen_coach', no_qwen)
+    for student, preference, native_phrase in [
+        ('मला समजत नाही', 'Marathi', 'हसू'),
+        ('हिंदी में समझाओ', 'Hindi', 'मुस्कान'),
+    ]:
+        req = BrainRequest(
+            grade=1, levelId='g01-l01', sceneKey='poem-pair-3',
+            activityTitle='Poem lines 5–6: grin and bell',
+            currentQuestion='Say the word at.', studentMessage=student,
+            preferredExplanationLanguage=preference,
+        )
+        answer = guard_class1_response(asyncio.run(respond_class1(req)), req)
+        assert native_phrase in (answer['message'] + answer['followUpQuestion'])
+        assert 'See me grin' in answer['modelSentence']
+        assert 'bell' in answer['followUpQuestion'].lower()
+        assert answer['responseQuality'] == 'UNCLEAR'
+        assert answer['activityComplete'] is False
+
+
+def test_unknown_or_unrecognized_poem_scene_fails_closed_instead_of_at():
+    import asyncio
+    import pytest
+    from fastapi import HTTPException
+    from server.compat import BrainRequest
+    from server.class1 import respond_class1
+
+    for scene_key, title in [('poem-pair-99', 'Poem lines 99'),
+                             ('', 'Poem unknown chapter')]:
+        req = BrainRequest(
+            grade=1, levelId='g01-l01', sceneKey=scene_key,
+            activityTitle=title, currentQuestion='Say the word at.',
+            studentMessage='at',
+        )
+        with pytest.raises(HTTPException) as failure:
+            asyncio.run(respond_class1(req))
+        assert failure.value.status_code == 422
+
+
+def test_real_brain_route_cannot_replace_authenticated_poem_with_foundations(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server.main import app
+    monkeypatch.setenv('TALKORA_ENV', 'test')
+    monkeypatch.setenv('TALKORA_CLASS1_QWEN_PILOT', 'true')
+    client = TestClient(app)
+    reply = client.post('/v1/brain/respond', json={
+        'grade': 1, 'levelId': 'g01-l01',
+        'sceneKey': 'poem-pair-3',
+        'activityTitle': 'MISMATCHED OLD TITLE',
+        'currentQuestion': 'Say the word at.',
+        'studentMessage': 'At at.',
+        'preferredExplanationLanguage': 'English',
+    })
+    assert reply.status_code == 200, reply.text
+    data = reply.json()
+    assert data['modelSentence'] == 'See me grin. When the bell rings, I go in.'
+    assert 'Can you say at?' not in data['message'] + str(data['followUpQuestion'])
+    assert data['activityComplete'] is False

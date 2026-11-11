@@ -306,9 +306,12 @@ async def respond_class1(req: Any) -> dict[str, Any]:
     # The supervised v3 lesson uses full school-action scenes instead of the
     # old tiny-word drills. Respond to syllabus questions before the old
     # conservative word-repeat classifier can switch topics.
+    # Node resolves sceneKey from its authorized MongoDB Activity. Never let a
+    # display title or old pronunciation target route a poem child to 'at'.
+    scene_key = str(getattr(req, 'sceneKey', '') or '')
     first_day = first_day_voice_reply(
         lang, req.activityTitle, req.currentQuestion,
-        req.studentMessage, int(req.hintLevel or 0),
+        req.studentMessage, int(req.hintLevel or 0), scene_key=scene_key,
     )
     if first_day is not None:
         # Normal First Day turns are taught immediately using the reviewed,
@@ -317,12 +320,13 @@ async def respond_class1(req: Any) -> dict[str, Any]:
         # never fabricates mastery, a new scene or a fake teacher evaluation.
         # The original baseline is an explicit safe curriculum response,
         # not an AI-generated transcript or claim that Qwen replied.
-        if should_consult_first_day_qwen(req.activityTitle, req.studentMessage):
+        if should_consult_first_day_qwen(req.activityTitle, req.studentMessage, scene_key=scene_key):
             try:
                 first_day['message'] = await first_day_qwen_coach(
                     lang, req.activityTitle, req.currentQuestion,
                     req.studentMessage, int(req.hintLevel or 0), first_day,
                     history=req.conversationHistory,
+                    **({'scene_key': scene_key} if scene_key else {}),
                 )
             except HTTPException as exc:
                 if exc.status_code not in (502, 503):
@@ -341,6 +345,10 @@ async def respond_class1(req: Any) -> dict[str, Any]:
             'hintLevel': min(3, max(0, int(req.hintLevel or 0)) + (1 if first_day['retry'] else 0)),
             'detectedSkills': [], 'remainingSkills': [],
         }
+    # An explicit poem scene that cannot be matched is a curriculum error,
+    # NOT permission to enter the legacy two-letter words trainer.
+    if scene_key.startswith('poem-') or req.activityTitle.lower().startswith('poem'):
+        raise HTTPException(422, 'FIRST_DAY_POEM_SCENE_NOT_RESOLVED')
     target = active_target(req.currentQuestion, req.activityTitle)
     observed = observed_target(req.studentMessage, target)
     plan = select_teaching_plan(req, observed, target)

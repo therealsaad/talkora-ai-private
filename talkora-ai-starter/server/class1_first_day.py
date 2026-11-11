@@ -46,6 +46,34 @@ POEM_SCENES = {
 }
 
 
+# V4 IDs exactly match the authenticated Node student activity metadata.
+# Matching poem scenes by loose titles alone can route a child into the old
+# foundation-word trainer and its infamous "Can you say at?" fallback.
+POEM_SCENE_KEYS = {
+    'poem-pair-1': 'Poem lines 1',
+    'poem-pair-2': 'Poem lines 3',
+    'poem-pair-3': 'Poem lines 5',
+    'poem-pair-4': 'Poem lines 7',
+    'poem-pair-5': 'Poem lines 9',
+    'poem-full': 'Poem finale',
+}
+
+
+def poem_scene_title(scene_key: str, title: str) -> str:
+    if scene_key:
+        marker = POEM_SCENE_KEYS.get(scene_key)
+        if scene_key.startswith('poem-') and marker is None:
+            from fastapi import HTTPException
+            raise HTTPException(422, 'UNKNOWN_FIRST_DAY_POEM_SCENE')
+        if marker:
+            # Canonical key wins over any stale display/teacher prompt.
+            return marker
+    if (title or '').lower().startswith('poem') and scene_for_title(title) is None:
+        from fastapi import HTTPException
+        raise HTTPException(422, 'UNKNOWN_FIRST_DAY_POEM_SCENE')
+    return title
+
+
 def poem_attempt_is_complete(title: str, transcript: str) -> bool:
     """Only the active two-line or full recital; a single word cannot pass."""
     txt = (transcript or '').lower().strip()
@@ -84,11 +112,13 @@ def scene_for_title(title: str):
 # Qwen is for genuinely open child questions. Repeats, hesitations, recognised
 # help requests and standard First Day answers have an approved, low-latency
 # reply in first_day_voice_reply. Retain the separate poem-rehearsal behavior.
-def should_consult_first_day_qwen(title: str, transcript: str) -> bool:
+def should_consult_first_day_qwen(title: str, transcript: str, scene_key: str = '') -> bool:
+    title = poem_scene_title(scene_key, title)
     if scene_for_title(title) is None:
         return False
-    if any(marker.lower() in (title or '').lower() for marker in POEM_SCENES):
-        return True  # Unpublished poem rehearsal remains on its existing path.
+    # The poem is also a *teaching* lesson. Routine two-line repeats and
+    # common bilingual help must NOT wait for a GPU before Azure can speak.
+    # Reserve Qwen for novel questions; the approved poem pair stays fixed.
     said = (transcript or '')[:240].casefold().strip()
     if not said:
         return False
@@ -103,7 +133,9 @@ def should_consult_first_day_qwen(title: str, transcript: str) -> bool:
                 or 'कशी' in said or 'कसे' in said or 'का ' in said
                 or 'काय ' in said or 'कशासाठी' in said)
 
-def first_day_voice_reply(language: str, title: str, question: str, transcript: str, hint_level: int) -> dict | None:
+def first_day_voice_reply(language: str, title: str, question: str, transcript: str, hint_level: int,
+                          scene_key: str = '') -> dict | None:
+    title = poem_scene_title(scene_key, title)
     scene = scene_for_title(title)
     if scene is None:
         return None
@@ -185,7 +217,8 @@ def first_day_voice_reply(language: str, title: str, question: str, transcript: 
 async def first_day_qwen_coach(language: str, title: str, question: str,
                                 transcript: str, hint_level: int,
                                 teacher_decision: dict,
-                                history: list[str] | None = None) -> str:
+                                history: list[str] | None = None,
+                                scene_key: str = '') -> str:
     """Use local Qwen for EVERY v3 student answer, not a fixed repeated reply.
 
     The stable teacher decision keeps the approved model and retry rules.
@@ -193,6 +226,7 @@ async def first_day_qwen_coach(language: str, title: str, question: str,
     model output is a recoverable error, never a fabricated learning turn.
     """
     from fastapi import HTTPException
+    title = poem_scene_title(scene_key, title)
     scene = scene_for_title(title)
     if scene is None:
         raise HTTPException(422, 'Unknown First Day scene')

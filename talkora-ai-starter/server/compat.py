@@ -59,6 +59,8 @@ class BrainRequest(BaseModel):
     studentMessage: str = Field(min_length=1, max_length=1000)
     preferredExplanationLanguage: str = 'English'
     activityTitle: str = ''
+    # From Node's authorized MongoDB activity metadata, never pupil speech.
+    sceneKey: str = Field(default='', max_length=32)
     currentQuestion: str = ''
     learningObjectives: list[str] = Field(default_factory=list)
     allowedVocabulary: list[str] = Field(default_factory=list)
